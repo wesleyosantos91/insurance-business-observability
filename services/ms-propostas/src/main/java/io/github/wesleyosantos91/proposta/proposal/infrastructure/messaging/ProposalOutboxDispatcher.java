@@ -73,8 +73,10 @@ public class ProposalOutboxDispatcher {
                 telemetry.relayOutcome(observation, updated ? "retry" : "claim_lost");
                 LOG.atWarn()
                         .addKeyValue("eventId", claim.proposal().eventId())
-                        .addKeyValue("attempt", claim.attempts()).addKeyValue("retryDelayMillis", delay)
-                        .addKeyValue("claimUpdated", updated).addKeyValue("failureType", failureType(failure))
+                        .addKeyValue("attempt", claim.attempts())
+                        .addKeyValue("retryDelayMillis", delay)
+                        .addKeyValue("claimUpdated", updated)
+                        .addKeyValue("failureType", failureType(failure))
                         .log("Outbox publication unconfirmed; same event retained for retry");
             } catch (RuntimeException databaseFailure) {
                 observation.error(databaseFailure);

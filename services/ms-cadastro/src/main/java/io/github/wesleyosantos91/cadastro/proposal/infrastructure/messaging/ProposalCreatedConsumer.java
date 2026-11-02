@@ -37,10 +37,14 @@ public class ProposalCreatedConsumer {
             stage = "acknowledgment";
             acknowledgment.acknowledge();
             LOG.atInfo()
-                    .addKeyValue("eventType", proposal.eventType()).addKeyValue("eventId", proposal.eventId())
-                    .addKeyValue("proposalId", proposal.proposalId()).addKeyValue("journeyId", proposal.journeyId())
-                    .addKeyValue("rootJourneyId", proposal.rootJourneyId()).addKeyValue("correlationId", proposal.correlationId())
-                    .addKeyValue("topic", record.topic()).addKeyValue("partition", record.partition())
+                    .addKeyValue("eventType", proposal.eventType())
+                    .addKeyValue("eventId", proposal.eventId())
+                    .addKeyValue("proposalId", proposal.proposalId())
+                    .addKeyValue("journeyId", proposal.journeyId())
+                    .addKeyValue("rootJourneyId", proposal.rootJourneyId())
+                    .addKeyValue("correlationId", proposal.correlationId())
+                    .addKeyValue("topic", record.topic())
+                    .addKeyValue("partition", record.partition())
                     .addKeyValue("offset", record.offset()).log("ProposalCreated processed and acknowledged");
         } catch (RuntimeException failure) {
             observation.error(failure);

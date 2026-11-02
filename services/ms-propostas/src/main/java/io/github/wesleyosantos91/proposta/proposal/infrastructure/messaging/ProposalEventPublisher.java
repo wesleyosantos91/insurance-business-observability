@@ -39,7 +39,8 @@ public class ProposalEventPublisher {
                                 .addKeyValue("rootJourneyId", metadata.getRootJourneyId())
                                 .addKeyValue("correlationId", metadata.getCorrelationId())
                                 .addKeyValue("topic", record.topic())
-                                .addKeyValue("partition", record.partition()).addKeyValue("offset", record.offset())
+                                .addKeyValue("partition", record.partition())
+                                .addKeyValue("offset", record.offset())
                                 .log("ProposalCreated publication confirmed");
                     }));
         } catch (RuntimeException failure) {

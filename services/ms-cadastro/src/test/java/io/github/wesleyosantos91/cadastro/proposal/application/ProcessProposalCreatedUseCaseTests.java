@@ -14,7 +14,7 @@ class ProcessProposalCreatedUseCaseTests {
     @Test
     void persistsANewReceiptAfterReservingTheInbox() {
         when(jdbc.update(startsWith("INSERT INTO proposal_inbox"), eq("event"), anyString())).thenReturn(1);
-        useCase.process(proposal("1.0.0"));
+        assertTrue(useCase.process(proposal("1.0.0")));
         verify(jdbc).update(startsWith("INSERT INTO received_proposals"), eq("event"), eq("proposal"),
                 eq("AUTO"), eq("journey"), eq("root"), eq("correlation"), any());
     }
@@ -25,7 +25,7 @@ class ProcessProposalCreatedUseCaseTests {
         when(jdbc.update(startsWith("INSERT INTO proposal_inbox"), eq("event"), fingerprint.capture())).thenReturn(0);
         when(jdbc.queryForObject(anyString(), eq(String.class), eq("event")))
                 .thenAnswer(ignored -> fingerprint.getValue());
-        useCase.process(proposal("1.0.0"));
+        assertFalse(useCase.process(proposal("1.0.0")));
         verify(jdbc, never()).update(startsWith("INSERT INTO received_proposals"),
                 any(), any(), any(), any(), any(), any(), any());
     }
@@ -36,7 +36,7 @@ class ProcessProposalCreatedUseCaseTests {
         when(jdbc.update(startsWith("INSERT INTO proposal_inbox"), eq("event"), captured.capture())).thenReturn(0);
         when(jdbc.queryForObject(anyString(), eq(String.class), eq("event")))
                 .thenAnswer(ignored -> captured.getAllValues().getFirst());
-        useCase.process(proposal("1.0.0"));
+        assertFalse(useCase.process(proposal("1.0.0")));
         assertThrows(IllegalArgumentException.class, () -> useCase.process(proposal("1.1.0")));
         verify(jdbc, never()).update(startsWith("INSERT INTO received_proposals"),
                 any(), any(), any(), any(), any(), any(), any());

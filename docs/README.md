@@ -30,3 +30,6 @@
 
 Documentos históricos preservam os resultados da respectiva etapa. Para operar o estado atual,
 priorize o README principal, os ADRs e os documentos de idempotência/Datadog.
+
+- [Qualidade: JaCoCo, PITest e SonarQube](code-quality.md)
+- [Validação de qualidade](code-quality-validation.md)

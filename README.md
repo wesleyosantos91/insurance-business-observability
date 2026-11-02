@@ -135,11 +135,28 @@ mvn clean verify
 ~~~
 
 BDD cria Kafka, Schema Registry, dois PostgreSQL e aplicações AOT isolados via Testcontainers.
-O teste de telemetria inicia/reutiliza a infraestrutura local e cria quatro aplicações de fundação temporárias:
+O teste de telemetria cria quatro aplicações de fundação temporárias, sem depender de Kafka ou bancos:
 verifica métricas JVM/HTTP com service/env/version e uso dos dois AOTs. A jornada OTLP é validada no BDD, com captura protobuf, correlação e backend indisponível. O teste Agent -Otlp verifica encaminhamento local e logs. Nenhum valida entrega SaaS.
 
 Consulte [testes de integração](tests/integration/README.md), [idempotência](docs/idempotency-testing.md)
 e o [relatório Datadog](docs/datadog-validation.md) para resultados e limites efetivamente verificados.
+
+## Qualidade de código
+
+mvn clean verify exige 90% de cobertura de linhas por serviço com JaCoCo.
+O profile mutation executa PITest nos dois serviços da jornada, com meta de 90%.
+SonarQube e PostgreSQL locais preservam histórico e Quality Gate independentes para cada um dos seis microsserviços.
+
+~~~powershell
+mvn -pl services/ms-propostas,services/ms-cadastro -am -Pmutation verify
+docker compose -f infrastructure/sonarqube/compose.yaml up -d --wait --wait-timeout 480
+./infrastructure/sonarqube/initialize.ps1
+./infrastructure/sonarqube/analyze.ps1
+# Um serviço específico:
+./infrastructure/sonarqube/analyze.ps1 -Service ms-propostas
+~~~
+
+Veja [métricas de qualidade](docs/code-quality.md) e [operação SonarQube](infrastructure/sonarqube/README.md).
 
 ## Operação e decisões
 

@@ -78,6 +78,28 @@ class CreateProposalUseCaseTests {
         assertThrows(IdempotencyConflictException.class, () -> useCase.create("same", "HOME"));
     }
 
+    @Test
+    void visibleAsciiBoundariesAndMaximumLengthRemainValid() throws Exception {
+        for (var key : new String[]{"!", "~", "a".repeat(128)}) {
+            when(store.register(key, "AUTO", clock.instant())).thenReturn(proposal(true));
+            assertEquals(proposal(true).response(), useCase(Duration.ofSeconds(1)).create(key, "AUTO").get());
+        }
+    }
+
+    @Test
+    void failedPublicationStatusReadCompletesExceptionallyAndCancelsPolling() {
+        when(store.register(anyString(), anyString(), any())).thenReturn(proposal(false));
+        doReturn(polling).when(scheduler).scheduleWithFixedDelay(any(Runnable.class), any(Duration.class));
+        var response = useCase(Duration.ofSeconds(2)).create("key", "AUTO");
+        var task = ArgumentCaptor.forClass(Runnable.class);
+        verify(scheduler).scheduleWithFixedDelay(task.capture(), any(Duration.class));
+        when(store.isPublished("proposal")).thenThrow(new IllegalStateException("database down"));
+        task.getValue().run();
+        assertInstanceOf(IllegalStateException.class,
+                assertThrows(ExecutionException.class, () -> response.get(1, TimeUnit.SECONDS)).getCause());
+        verify(polling).cancel(false);
+    }
+
     private StoredProposal proposal(boolean published) {
         return new StoredProposal("proposal", "AUTO", "journey", "correlation", "event", clock.instant(), published, null, null);
     }
