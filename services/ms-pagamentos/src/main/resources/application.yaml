@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: ms-pagamentos
+
+server:
+  port: 8086
+
+management:
+  metrics:
+    tags:
+      service: ${DD_SERVICE:${spring.application.name}}
+      env: ${DD_ENV:local}
+      version: ${DD_VERSION:0.0.1-SNAPSHOT}
+  statsd:
+    metrics:
+      export:
+        enabled: ${DD_METRICS_ENABLED:true}
+        flavor: datadog
+        host: ${DD_AGENT_HOST:localhost}
+        port: ${DD_DOGSTATSD_PORT:8125}
+        polling-frequency: 10s
+  endpoints:
+    web:
+      exposure:
+        include: health,info

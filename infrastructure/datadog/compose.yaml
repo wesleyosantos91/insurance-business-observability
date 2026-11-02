@@ -1,0 +1,196 @@
+name: insurance-observability
+
+x-app-environment: &app-environment
+  DD_AGENT_HOST: datadog-agent
+  DD_ENV: ${DD_ENV:-local}
+  DD_VERSION: ${DD_VERSION:-0.0.1-SNAPSHOT}
+  DD_RUNTIME_METRICS_ENABLED: "true"
+  DD_DOGSTATSD_PORT: "8125"
+  DD_TRACE_AGENT_PORT: "8126"
+  DD_METRICS_ENABLED: "true"
+
+x-app: &app
+  restart: unless-stopped
+  depends_on:
+    datadog-agent:
+      condition: service_healthy
+  networks: [observability]
+  mem_limit: 768m
+  stop_grace_period: 30s
+
+services:
+  datadog-agent:
+    image: registry.datadoghq.com/agent:7.85.0
+    container_name: insurance-observability-agent
+    restart: unless-stopped
+    environment:
+      DD_API_KEY: ${DD_API_KEY:?Configure DD_API_KEY no ambiente ou .env local}
+      DD_SITE: ${DD_SITE:-datadoghq.com}
+      DD_HOSTNAME: insurance-observability-local
+      DD_ENV: ${DD_ENV:-local}
+      DD_TAGS: project:insurance-business-observability
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC: "true"
+      DD_DOGSTATSD_STATS_ENABLE: "true"
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "false"
+      DD_CONTAINER_EXCLUDE_LOGS: "name:.*"
+      DD_CONTAINER_INCLUDE_LOGS: "name:insurance-observability-ms-(propostas|cadastro)$"
+      HOST_PROC: /proc
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT: "0.0.0.0:4318"
+      DD_OTLP_CONFIG_TRACES_ENABLED: "true"
+      DD_OTLP_CONFIG_METRICS_ENABLED: "true"
+      DD_PROCESS_AGENT_ENABLED: "false"
+      DD_CONTAINER_EXCLUDE_METRICS: "name:.*"
+      DD_CONTAINER_INCLUDE_METRICS: "name:insurance-observability-ms-.*"
+      DD_DOCKER_LABELS_AS_TAGS: '{"com.datadoghq.tags.service":"service","com.datadoghq.tags.env":"env","com.datadoghq.tags.version":"version"}'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+    networks: [observability]
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD", "bash", "-ec", "agent health && exec 3<>/dev/tcp/127.0.0.1/4318"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+
+  ms-propostas:
+    <<: *app
+    image: insurance/ms-propostas:datadog-aot
+    container_name: insurance-observability-ms-propostas
+    build:
+      context: ../..
+      dockerfile: services/ms-propostas/Dockerfile
+    environment:
+      <<: *app-environment
+      DD_SERVICE: ms-propostas
+      OTEL_SERVICE_NAME: ms-propostas
+      TRACING_SAMPLING_PROBABILITY: ${TRACING_SAMPLING_PROBABILITY:-1.0}
+      OTLP_METRICS_STEP: ${OTLP_METRICS_STEP:-10s}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://datadog-agent:4318
+      OTEL_RESOURCE_ATTRIBUTES: service.name=ms-propostas,service.version=${DD_VERSION:-0.0.1-SNAPSHOT},deployment.environment.name=${DD_ENV:-local},deployment.environment=${DD_ENV:-local}
+      DD_RUNTIME_METRICS_ENABLED: "false"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      DATABASE_URL: jdbc:postgresql://propostas-db:5432/propostas
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-insurance}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-insurance}
+    labels:
+      com.datadoghq.tags.service: ms-propostas
+      com.datadoghq.ad.logs: '[{"source":"java","service":"ms-propostas"}]'
+      com.datadoghq.tags.env: ${DD_ENV:-local}
+      com.datadoghq.tags.version: ${DD_VERSION:-0.0.1-SNAPSHOT}
+    ports: ["127.0.0.1:${PROPOSTAS_PORT:-8081}:8081"]
+    networks: [observability, kafka-local, data-local]
+
+  ms-cadastro:
+    <<: *app
+    image: insurance/ms-cadastro:datadog-aot
+    container_name: insurance-observability-ms-cadastro
+    build:
+      context: ../..
+      dockerfile: services/ms-cadastro/Dockerfile
+    environment:
+      <<: *app-environment
+      DD_SERVICE: ms-cadastro
+      OTEL_SERVICE_NAME: ms-cadastro
+      TRACING_SAMPLING_PROBABILITY: ${TRACING_SAMPLING_PROBABILITY:-1.0}
+      OTLP_METRICS_STEP: ${OTLP_METRICS_STEP:-10s}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://datadog-agent:4318
+      OTEL_RESOURCE_ATTRIBUTES: service.name=ms-cadastro,service.version=${DD_VERSION:-0.0.1-SNAPSHOT},deployment.environment.name=${DD_ENV:-local},deployment.environment=${DD_ENV:-local}
+      DD_RUNTIME_METRICS_ENABLED: "false"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      DATABASE_URL: jdbc:postgresql://cadastro-db:5432/cadastro
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-insurance}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-insurance}
+    labels:
+      com.datadoghq.tags.service: ms-cadastro
+      com.datadoghq.ad.logs: '[{"source":"java","service":"ms-cadastro"}]'
+      com.datadoghq.tags.env: ${DD_ENV:-local}
+      com.datadoghq.tags.version: ${DD_VERSION:-0.0.1-SNAPSHOT}
+    ports: ["127.0.0.1:${CADASTRO_PORT:-8082}:8082"]
+    networks: [observability, kafka-local, data-local]
+
+  ms-analise:
+    <<: *app
+    image: insurance/ms-analise:datadog-aot
+    container_name: insurance-observability-ms-analise
+    build:
+      context: ../../services/ms-analise
+      dockerfile: Dockerfile
+    environment:
+      <<: *app-environment
+      DD_SERVICE: ms-analise
+    labels:
+      com.datadoghq.tags.service: ms-analise
+      com.datadoghq.tags.env: ${DD_ENV:-local}
+      com.datadoghq.tags.version: ${DD_VERSION:-0.0.1-SNAPSHOT}
+    ports: ["127.0.0.1:${ANALISE_PORT:-8083}:8083"]
+    networks: [observability]
+
+  ms-contratos:
+    <<: *app
+    image: insurance/ms-contratos:datadog-aot
+    container_name: insurance-observability-ms-contratos
+    build:
+      context: ../../services/ms-contratos
+      dockerfile: Dockerfile
+    environment:
+      <<: *app-environment
+      DD_SERVICE: ms-contratos
+    labels:
+      com.datadoghq.tags.service: ms-contratos
+      com.datadoghq.tags.env: ${DD_ENV:-local}
+      com.datadoghq.tags.version: ${DD_VERSION:-0.0.1-SNAPSHOT}
+    ports: ["127.0.0.1:${CONTRATOS_PORT:-8084}:8084"]
+    networks: [observability]
+
+  ms-endossos:
+    <<: *app
+    image: insurance/ms-endossos:datadog-aot
+    container_name: insurance-observability-ms-endossos
+    build:
+      context: ../../services/ms-endossos
+      dockerfile: Dockerfile
+    environment:
+      <<: *app-environment
+      DD_SERVICE: ms-endossos
+    labels:
+      com.datadoghq.tags.service: ms-endossos
+      com.datadoghq.tags.env: ${DD_ENV:-local}
+      com.datadoghq.tags.version: ${DD_VERSION:-0.0.1-SNAPSHOT}
+    ports: ["127.0.0.1:${ENDOSSOS_PORT:-8085}:8085"]
+    networks: [observability]
+
+  ms-pagamentos:
+    <<: *app
+    image: insurance/ms-pagamentos:datadog-aot
+    container_name: insurance-observability-ms-pagamentos
+    build:
+      context: ../../services/ms-pagamentos
+      dockerfile: Dockerfile
+    environment:
+      <<: *app-environment
+      DD_SERVICE: ms-pagamentos
+    labels:
+      com.datadoghq.tags.service: ms-pagamentos
+      com.datadoghq.tags.env: ${DD_ENV:-local}
+      com.datadoghq.tags.version: ${DD_VERSION:-0.0.1-SNAPSHOT}
+    ports: ["127.0.0.1:${PAGAMENTOS_PORT:-8086}:8086"]
+    networks: [observability]
+
+
+networks:
+  observability:
+    name: insurance-observability-local
+  kafka-local:
+    external: true
+    name: ${KAFKA_NETWORK_NAME:-insurance-kafka-local}
+  data-local:
+    external: true
+    name: insurance-data-local

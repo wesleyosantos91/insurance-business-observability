@@ -1,0 +1,118 @@
+spring:
+  application:
+    name: ms-propostas
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/propostas?connectTimeout=3&socketTimeout=10}
+    username: ${DATABASE_USERNAME:insurance}
+    password: ${DATABASE_PASSWORD:insurance}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000
+      initialization-fail-timeout: -1
+  task:
+    scheduling:
+      pool:
+        size: 2
+  threads:
+    virtual:
+      enabled: false
+  mvc:
+    async:
+      request-timeout: 7s
+  kafka:
+    template:
+      observation-enabled: true
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      acks: all
+      retries: 2147483647
+      properties:
+        "[enable.idempotence]": true
+        "[max.in.flight.requests.per.connection]": 5
+        "[delivery.timeout.ms]": 4000
+        "[request.timeout.ms]": 1000
+        "[max.block.ms]": 1000
+        "[schema.registry.url]": ${SCHEMA_REGISTRY_URL:http://localhost:8087}
+        "[value.subject.name.strategy]": io.confluent.kafka.serializers.subject.TopicRecordNameStrategy
+        "[auto.register.schemas]": false
+        "[http.connect.timeout.ms]": 1000
+        "[http.read.timeout.ms]": 1000
+        "[max.retries]": 0
+
+insurance:
+  outbox:
+    lease-duration: ${OUTBOX_LEASE_DURATION:30s}
+    publication-timeout: ${OUTBOX_PUBLICATION_TIMEOUT:6s}
+  persistence:
+    initialize: ${PERSISTENCE_INITIALIZE:true}
+  kafka:
+    proposals-topic: insurance.proposals.events.v1
+    publication-timeout: ${PROPOSAL_PUBLICATION_TIMEOUT:5s}
+
+server:
+  port: 8081
+
+management:
+  metrics:
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+        "[insurance.proposal.register]": true
+        "[insurance.outbox.publish]": true
+        "[insurance.proposal.consume]": true
+        "[insurance.proposal.delivery.latency]": true
+    tags:
+      service: ${DD_SERVICE:${spring.application.name}}
+      env: ${DD_ENV:local}
+      version: ${DD_VERSION:0.0.1-SNAPSHOT}
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    propagation:
+      consume: w3c
+      produce: w3c
+  opentelemetry:
+    resource-attributes:
+      "[service.name]": ${DD_SERVICE:${spring.application.name}}
+      "[service.version]": ${DD_VERSION:0.0.1-SNAPSHOT}
+      "[deployment.environment.name]": ${DD_ENV:local}
+      "[deployment.environment]": ${DD_ENV:local}
+    tracing:
+      export:
+        schedule-delay: 1s
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/traces}
+          connect-timeout: 1s
+          timeout: 2s
+  otlp:
+    metrics:
+      export:
+        enabled: ${OTLP_METRICS_ENABLED:true}
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/metrics}
+        step: ${OTLP_METRICS_STEP:10s}
+        aggregation-temporality: delta
+        connect-timeout: 1s
+        read-timeout: 2s
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  logging:
+    export:
+      otlp:
+        enabled: false
+
+logging:
+  structured:
+    format:
+      console: logstash
+    json:
+      rename:
+        traceId: trace_id
+        spanId: span_id
+      add:
+        service: ${DD_SERVICE:${spring.application.name}}
+        env: ${DD_ENV:local}
+        version: ${DD_VERSION:0.0.1-SNAPSHOT}

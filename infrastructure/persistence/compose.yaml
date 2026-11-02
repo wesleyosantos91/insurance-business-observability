@@ -1,0 +1,40 @@
+name: insurance-business-persistence
+services:
+  propostas-db:
+    image: postgres:17.11
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: propostas
+      POSTGRES_USER: ${DATABASE_USERNAME:-insurance}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-insurance}
+    ports: ["127.0.0.1:${PROPOSTAS_DATABASE_PORT:-5433}:5432"]
+    volumes: [propostas-data:/var/lib/postgresql/data]
+    networks: [insurance-data]
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  cadastro-db:
+    image: postgres:17.11
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cadastro
+      POSTGRES_USER: ${DATABASE_USERNAME:-insurance}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-insurance}
+    ports: ["127.0.0.1:${CADASTRO_DATABASE_PORT:-5434}:5432"]
+    volumes: [cadastro-data:/var/lib/postgresql/data]
+    networks: [insurance-data]
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  propostas-data:
+  cadastro-data:
+networks:
+  insurance-data:
+    name: insurance-data-local

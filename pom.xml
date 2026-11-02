@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.wesleosantos91</groupId>
+    <artifactId>insurance-business-observability</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>wesleysantos91</id>
+            <name>Wesley Santos</name>
+            <email>wesleyosantos91@gmail.com</email>
+            <url>https://github.com/wesleysantos91</url>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>America/Sao_Paulo</timezone>
+        </developer>
+    </developers>
+
+    <modules>
+        <module>libraries/event-contracts</module>
+        <module>services/ms-propostas</module>
+        <module>services/ms-cadastro</module>
+        <module>services/ms-analise</module>
+        <module>services/ms-contratos</module>
+        <module>services/ms-endossos</module>
+        <module>services/ms-pagamentos</module>
+    </modules>
+
+    <properties>
+        <java.version>27</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+    </properties>
+
+</project>

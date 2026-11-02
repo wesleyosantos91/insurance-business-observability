@@ -1,0 +1,38 @@
+{
+  "type": "record",
+  "name": "ProposalCreated",
+  "namespace": "io.github.wesleyosantos91.insurance.events.proposals.v1",
+  "doc": "A proposal was created. Self-contained domain event without customer or sensitive data.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": {
+        "type": "record",
+        "name": "EventMetadata",
+        "fields": [
+          {"name": "eventId", "type": "string", "doc": "Unique event identity; future consumer idempotency key."},
+          {"name": "eventType", "type": "string", "doc": "ProposalCreated."},
+          {"name": "schemaVersion", "type": "string", "doc": "Semantic event contract revision, initially 1.0.0; independent from registry version and ID."},
+          {"name": "occurredAt", "type": "string", "doc": "ISO-8601 UTC timestamp, for example 2026-11-01T12:30:00.000Z."},
+          {"name": "productKey", "type": "string"},
+          {"name": "journeyType", "type": "string", "doc": "PROPOSAL."},
+          {"name": "journeyId", "type": "string"},
+          {"name": "rootJourneyId", "type": "string"},
+          {"name": "correlationId", "type": "string"},
+          {"name": "parentJourneyId", "type": ["null", "string"], "default": null},
+          {"name": "causationId", "type": ["null", "string"], "default": null}
+        ]
+      }
+    },
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "ProposalCreatedPayload",
+        "fields": [
+          {"name": "proposalId", "type": "string", "doc": "Stable Kafka message key for the proposal journey."}
+        ]
+      }
+    }
+  ]
+}
