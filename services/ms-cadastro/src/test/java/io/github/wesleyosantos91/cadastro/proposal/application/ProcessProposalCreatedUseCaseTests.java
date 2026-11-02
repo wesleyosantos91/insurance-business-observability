@@ -42,6 +42,16 @@ class ProcessProposalCreatedUseCaseTests {
                 any(), any(), any(), any(), any(), any(), any());
     }
 
+    @Test
+    void missingHashAlgorithmPreventsInboxReservationAndBusinessEffects() {
+        var unavailable = new java.security.NoSuchAlgorithmException("unavailable provider");
+        try (var digest = mockStatic(java.security.MessageDigest.class)) {
+            digest.when(() -> java.security.MessageDigest.getInstance("SHA-256")).thenThrow(unavailable);
+            var failure = assertThrows(IllegalStateException.class, () -> useCase.process(proposal("1.0.0")));
+            assertSame(unavailable, failure.getCause());
+            verifyNoInteractions(jdbc);
+        }
+    }
     private ReceivedProposal proposal(String version) {
         return new ReceivedProposal("event", "ProposalCreated", version, "PROPOSAL",
                 "proposal", "AUTO", "journey", "root", "correlation", null, null,

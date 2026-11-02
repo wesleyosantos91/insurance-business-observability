@@ -67,6 +67,13 @@ class ProposalOutboxDispatcherTests {
     }
 
     @Test
+    void rejectsNegativeAndSubmillisecondPublicationTimeouts() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new OutboxProperties(Duration.ofSeconds(30), Duration.ofSeconds(-1)));
+        assertThrows(IllegalArgumentException.class,
+                () -> new OutboxProperties(Duration.ofSeconds(30), Duration.ofNanos(1)));
+    }
+    @Test
     void equalJitterRemainsWithinHalfAndAllOfTheCappedExponentialDelay() {
         for (int attempt : new int[] { 1, 2, 3, 6, 7, 20, Integer.MAX_VALUE }) {
             var ceiling = ProposalOutboxDispatcher.retryCeilingMillis(attempt);

@@ -44,6 +44,9 @@ class CreateProposalUseCaseTests {
         assertFalse(response.isDone());
         var task = ArgumentCaptor.forClass(Runnable.class);
         verify(scheduler).scheduleWithFixedDelay(task.capture(), eq(Duration.ofMillis(100)));
+        task.getValue().run();
+        assertFalse(response.isDone(), "A pending outbox record must not confirm the response");
+        verifyNoInteractions(polling);
         when(store.isPublished("proposal")).thenReturn(true);
         task.getValue().run();
         assertEquals(proposal.response(), response.get(1, TimeUnit.SECONDS));

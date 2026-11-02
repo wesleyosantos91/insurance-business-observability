@@ -192,7 +192,12 @@
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.90</minimum>
+                                            <minimum>1.00</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>1.00</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
@@ -258,7 +263,7 @@
                             <outputFormats><param>HTML</param><param>XML</param></outputFormats>
                             <timestampedReports>false</timestampedReports>
                             <mutationThreshold>100</mutationThreshold>
-                            <coverageThreshold>90</coverageThreshold>
+                            <coverageThreshold>100</coverageThreshold>
                             <failWhenNoMutations>true</failWhenNoMutations>
                         </configuration>
                     </plugin>

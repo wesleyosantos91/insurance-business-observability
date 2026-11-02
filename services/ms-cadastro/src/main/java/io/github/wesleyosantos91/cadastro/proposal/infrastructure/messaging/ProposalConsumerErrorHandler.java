@@ -6,10 +6,20 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.listener.CommonContainerStoppingErrorHandler;
+import org.springframework.kafka.listener.CommonDelegatingErrorHandler;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.MessageListenerContainer;
 
-public class ProposalConsumerErrorHandler extends CommonContainerStoppingErrorHandler {
+public class ProposalConsumerErrorHandler extends CommonDelegatingErrorHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ProposalConsumerErrorHandler.class);
+
+    public ProposalConsumerErrorHandler() {
+        this(new CommonContainerStoppingErrorHandler());
+    }
+
+    ProposalConsumerErrorHandler(CommonErrorHandler stoppingHandler) {
+        super(stoppingHandler);
+    }
 
     @Override
     public void handleRemaining(Exception failure, List<ConsumerRecord<?, ?>> records,

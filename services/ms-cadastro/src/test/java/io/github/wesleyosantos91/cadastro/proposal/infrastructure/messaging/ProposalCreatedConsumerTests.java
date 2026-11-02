@@ -79,6 +79,23 @@ class ProposalCreatedConsumerTests {
     }
 
     @Test
+    void rejectsADifferentJourneyBeforeProcessingAndAcknowledgment() {
+        var event = event();
+        event.getMetadata().setJourneyType("CONTRACT");
+        var failure = assertThrows(IllegalArgumentException.class, () -> consumer.receive(record(event), ack));
+        assertEquals("Unexpected journeyType", failure.getMessage());
+        verifyNoInteractions(useCase, ack);
+    }
+
+    @Test
+    void nullRequiredMetadataFailsBeforeDereferencingAndAcknowledgment() {
+        var event = event();
+        event.getMetadata().setEventId(null);
+        var failure = assertThrows(IllegalArgumentException.class, () -> consumer.receive(record(event), ack));
+        assertEquals("eventId is required", failure.getMessage());
+        verifyNoInteractions(useCase, ack);
+    }
+    @Test
     void rejectsInvalidProposalAndPartitionKey() {
         var event = event();
         event.getPayload().setProposalId("");

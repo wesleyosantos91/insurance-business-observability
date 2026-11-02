@@ -39,6 +39,25 @@ class ProposalTelemetryTests {
     }
 
     @Test
+    void noActiveSpanProducesNoPropagationHeaders() {
+        var tracer = org.mockito.Mockito.mock(Tracer.class);
+        var propagator = org.mockito.Mockito.mock(Propagator.class);
+        var telemetry = new ProposalTelemetry(ObservationRegistry.NOOP, new SimpleMeterRegistry(), tracer, propagator);
+        assertTrue(telemetry.traceHeaders().isEmpty());
+        org.mockito.Mockito.verifyNoInteractions(propagator);
+    }
+
+    @Test
+    void replayCountsSeparatelyFromNewRegistrations() {
+        var meters = new SimpleMeterRegistry();
+        var telemetry = new ProposalTelemetry(ObservationRegistry.NOOP, meters, Tracer.NOOP, Propagator.NOOP);
+        var proposal = new StoredProposal("p", "AUTO", "j", "c", "e",
+                Instant.parse("2026-11-01T12:00:00Z"), false, null, null);
+        telemetry.registered(telemetry.registration(), proposal, false);
+        assertEquals(1, meters.get("insurance.proposal.registrations").tag("outcome", "replayed").counter().count());
+        assertNull(meters.find("insurance.proposal.registrations").tag("outcome", "created").counter());
+    }
+    @Test
     void aLegacyOutboxWithoutTraceContextStillHasObservableDelivery() {
         var meters = new SimpleMeterRegistry();
         var registry = ObservationRegistry.create();

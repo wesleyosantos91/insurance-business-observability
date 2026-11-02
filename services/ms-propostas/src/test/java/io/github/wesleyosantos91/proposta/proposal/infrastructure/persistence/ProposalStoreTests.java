@@ -108,6 +108,18 @@ class ProposalStoreTests {
         assertEquals(1, meters.get("registration").timer().count());
     }
     @Test
+    void missingHashAlgorithmFailsBeforeWritingAndRollsBackTheTransaction() {
+        var unavailable = new java.security.NoSuchAlgorithmException("unavailable provider");
+        try (var digest = mockStatic(java.security.MessageDigest.class)) {
+            digest.when(() -> java.security.MessageDigest.getInstance("SHA-256")).thenThrow(unavailable);
+            var failure = assertThrows(IllegalStateException.class, () -> store.register("key", "AUTO", now));
+            assertSame(unavailable, failure.getCause());
+            verify(manager).rollback(status);
+            verify(manager, never()).commit(any());
+            verifyNoInteractions(jdbc);
+        }
+    }
+    @Test
     void publicationStatusRequiresPositiveDatabaseValue() {
         when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq("p"))).thenReturn(false, true, null);
         assertFalse(store.isPublished("p"));

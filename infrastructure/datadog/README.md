@@ -29,6 +29,10 @@ if (-not (Test-Path infrastructure/datadog/.env)) {
 ~~~
 
 Edite o .env local: DD_API_KEY da organização e DD_SITE correto (padrão US1/datadoghq.com).
+DD_API_KEY deve ser uma API Key de Organization Settings → API Keys da mesma organização/site.
+Application Key e o acesso Actions API Access não substituem essa credencial; não são necessários
+para o Agent. Para US5, use DD_SITE=us5.datadoghq.com. O login OAuth do MCP também é independente.
+
 Mantenha credenciais PostgreSQL consistentes com volumes existentes.
 A chave não deve entrar em código, Dockerfiles, build args ou ambientes das aplicações.
 

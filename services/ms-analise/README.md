@@ -48,3 +48,6 @@ Checkstyle 14.3.0 é obrigatório em mvn validate/verify, com zero violações e
 Regras compartilhadas e comando de teste: [padrão Java](../../config/checkstyle/README.md).
 O projeto Sonar mantém medidas e histórico próprios e recebe o perfil Checkstyle no bootstrap.
 O build Docker deve usar a raiz do repositório como contexto para copiar essa configuração.
+
+JaCoCo exige 100% de linhas e branches em mvn clean verify. O Sonar mantém cobertura e histórico
+independentes por serviço. Veja a [validação de cobertura](../../docs/full-coverage-validation.md).

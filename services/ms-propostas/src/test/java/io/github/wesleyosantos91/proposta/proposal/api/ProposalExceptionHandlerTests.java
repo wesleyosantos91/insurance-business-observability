@@ -18,6 +18,18 @@ class ProposalExceptionHandlerTests {
         assertEquals("Confirmação não recebida no prazo. A publicação pode ter ocorrido.", problem.getDetail());
     }
 
+    @ParameterizedTest
+    @MethodSource("wrappersWithoutCause")
+    void wrappersWithoutCauseReturn503WithoutLeakingThePrivateMessage(Exception failure) {
+        var problem = new ProposalExceptionHandler().publicationFailed(failure);
+        assertEquals(503, problem.getStatus());
+        assertEquals("Não foi possível confirmar a publicação da proposta.", problem.getDetail());
+    }
+
+    static Stream<Exception> wrappersWithoutCause() {
+        return Stream.of(new CompletionException("private-detail", null),
+                new ExecutionException("private-detail", null));
+    }
     static Stream<Exception> wrappedTimeouts() {
         return Stream.of(new CompletionException(new ExecutionException(new TimeoutException())),
                 new org.apache.kafka.common.errors.TimeoutException("private-detail"),

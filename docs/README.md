@@ -38,3 +38,5 @@ priorize o README principal, os ADRs e os documentos de idempotência/Datadog.
 
 - [Padrão Checkstyle e teste de bloqueio](../config/checkstyle/README.md)
 - [Revisão dos apontamentos Sonar](sonar-findings-review.md)
+
+- [Cobertura completa por serviço e regressão](full-coverage-validation.md).

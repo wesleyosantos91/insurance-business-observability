@@ -59,3 +59,6 @@ PITest permanece no profile mutation e é executado automaticamente pelo analyze
 A validação usa asserções de efeitos observáveis, sem exclusões de classes/mutadores ou aceite automático
 de achados. Para jitter, um overload package-private recebe RandomGenerator (API estável do JDK);
 a chamada de produção preserva ThreadLocalRandom e os limites inclusivos originais.
+
+Os limites históricos de linhas desta decisão foram substituídos pela [ADR-0011](0011-full-coverage.md).
+As decisões de ferramentas, escopo e independência dos projetos permanecem válidas.

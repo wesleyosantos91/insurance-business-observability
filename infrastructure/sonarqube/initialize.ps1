@@ -5,7 +5,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $services = @('ms-propostas','ms-cadastro','ms-analise','ms-contratos','ms-endossos','ms-pagamentos')
-$gateName = 'Insurance - 90 percent line coverage'
+$gateName = 'Insurance - 100 percent coverage'
 $envPath = Join-Path $PSScriptRoot '.env'
 $settings = [ordered]@{ SONAR_PORT='9000'; SONAR_DB_PASSWORD='sonarqube-local'; SONAR_ADMIN_PASSWORD=''; SONAR_TOKEN='' }
 if (Test-Path $envPath) {
@@ -22,6 +22,23 @@ function Basic-Headers([string]$Password) {
 }
 function Invoke-Sonar([string]$Path, [hashtable]$Body, [string]$Method = 'Post') {
     Invoke-RestMethod -Uri ($BaseUrl.TrimEnd('/') + $Path) -Method $Method -Headers $script:headers -Body $Body
+}
+function Set-CoverageConditions([string]$Name, [switch]$WithMutation) {
+    $gate = Invoke-Sonar '/api/qualitygates/show' @{name=$Name} 'Get'
+    $thresholds = @{coverage='100';line_coverage='100';branch_coverage='100';new_coverage='100'}
+    if ($WithMutation) { $thresholds['dc5_mutationAnalysis_mutations_coverage'] = '100' }
+    foreach ($metric in $thresholds.Keys) {
+        $condition = $gate.conditions | Where-Object metric -eq $metric
+        if (-not $condition) {
+            Invoke-Sonar '/api/qualitygates/create_condition' @{
+                gateName=$Name;metric=$metric;op='LT';error=$thresholds[$metric]
+            } | Out-Null
+        } elseif ($condition.error -ne $thresholds[$metric] -or $condition.op -ne 'LT') {
+            Invoke-Sonar '/api/qualitygates/update_condition' @{
+                id=$condition.id;metric=$metric;op='LT';error=$thresholds[$metric]
+            } | Out-Null
+        }
+    }
 }
 $script:headers = Basic-Headers $(if($settings.SONAR_ADMIN_PASSWORD){$settings.SONAR_ADMIN_PASSWORD}else{'admin'})
 $authentication = Invoke-Sonar '/api/authentication/validate' @{} 'Get'
@@ -42,10 +59,7 @@ $gates = Invoke-Sonar '/api/qualitygates/list' @{} 'Get'
 if (-not ($gates.qualitygates | Where-Object name -eq $gateName)) {
     Invoke-Sonar '/api/qualitygates/create' @{name=$gateName} | Out-Null
 }
-$gate = Invoke-Sonar '/api/qualitygates/show' @{name=$gateName} 'Get'
-if (-not ($gate.conditions | Where-Object metric -eq 'line_coverage')) {
-    Invoke-Sonar '/api/qualitygates/create_condition' @{gateName=$gateName;metric='line_coverage';op='LT';error='90'} | Out-Null
-}
+Set-CoverageConditions $gateName
 foreach ($service in $services) {
     $projectKey = "insurance-$service"
     $projects = Invoke-Sonar '/api/projects/search' @{projects=$projectKey} 'Get'
@@ -62,7 +76,7 @@ foreach ($service in $services) {
         $settings[$tokenKey] = $token.token
         Save-LocalSettings
     }
-    Write-Host "Project and 90% line-coverage gate configured: $BaseUrl/dashboard?id=$projectKey"
+    Write-Host "Project and 100% coverage gate configured: $BaseUrl/dashboard?id=$projectKey"
 }
 & (Join-Path $PSScriptRoot 'configure-checkstyle.ps1') -BaseUrl $BaseUrl
 $installed = Invoke-Sonar '/api/plugins/installed' @{} 'Get'
@@ -97,20 +111,12 @@ if ($mutation) {
         $action = if ($enabled) { 'activate_rule' } else { 'deactivate_rule' }
         Invoke-Sonar "/api/qualityprofiles/$action" @{key=$profile.key;rule=$rule.key} | Out-Null
     }
-    $mutationGateName = 'Insurance - 90 percent line coverage and 100 percent mutation'
+    $mutationGateName = 'Insurance - 100 percent coverage and mutation'
     $gates = Invoke-Sonar '/api/qualitygates/list' @{} 'Get'
     if (-not ($gates.qualitygates | Where-Object name -eq $mutationGateName)) {
         Invoke-Sonar '/api/qualitygates/create' @{name=$mutationGateName} | Out-Null
     }
-    $gate = Invoke-Sonar '/api/qualitygates/show' @{name=$mutationGateName} 'Get'
-    $thresholds = @{line_coverage='90';dc5_mutationAnalysis_mutations_coverage='100'}
-    foreach ($metric in $thresholds.Keys) {
-        if (-not ($gate.conditions | Where-Object metric -eq $metric)) {
-            Invoke-Sonar '/api/qualitygates/create_condition' @{
-                gateName=$mutationGateName;metric=$metric;op='LT';error=$thresholds[$metric]
-            } | Out-Null
-        }
-    }
+    Set-CoverageConditions $mutationGateName -WithMutation
     foreach ($service in @('ms-propostas','ms-cadastro')) {
         Invoke-Sonar '/api/qualityprofiles/add_project' @{
             language='java';project="insurance-$service";qualityProfile=$profileName

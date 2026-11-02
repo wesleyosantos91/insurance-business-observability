@@ -92,6 +92,23 @@ class ProposalOutboxRecoveryTests {
     }
 
     @Test
+    void interruptedWaitRestoresInterruptEvenWhenRetryDiagnosticsFail() {
+        var observation = mock(Observation.class);
+        when(telemetry.relay(claim.proposal())).thenReturn(observation);
+        when(publisher.publish(any())).thenReturn(new CompletableFuture<>());
+        when(store.retry(eq(claim), any(), eq("InterruptedException")))
+                .thenThrow(new IllegalStateException("database unavailable"));
+        doThrow(new IllegalStateException("telemetry unavailable"))
+                .when(telemetry).relayOutcome(observation, "database_failure");
+        Thread.currentThread().interrupt();
+        assertDoesNotThrow(relay::dispatch);
+        assertTrue(Thread.currentThread().isInterrupted());
+        verify(store).retry(eq(claim), any(), eq("InterruptedException"));
+        verify(store, never()).published(any());
+        verify(observation).stop();
+    }
+
+    @Test
     void databaseFailureAfterKafkaAckReliesOnLeaseRecovery() {
         when(publisher.publish(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(store.published(claim)).thenThrow(new IllegalStateException("database down"));
@@ -119,6 +136,15 @@ class ProposalOutboxRecoveryTests {
         verify(store, never()).published(any());
     }
 
+    @Test
+    void completionFailureWithoutCauseStillRetainsTheEventAndAUsefulFailureType() {
+        when(publisher.publish(any())).thenReturn(
+                CompletableFuture.failedFuture(new CompletionException((Throwable) null)));
+        when(store.retry(eq(claim), any(), eq("CompletionException"))).thenReturn(true);
+        relay.dispatch();
+        verify(store).retry(eq(claim), any(), eq("CompletionException"));
+        verify(store, never()).published(any());
+    }
     private void assertRecoveryLogged(Runnable dispatch) {
         var logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ProposalOutboxDispatcher.class);
         var appender = new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();

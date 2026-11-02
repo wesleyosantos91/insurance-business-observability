@@ -57,7 +57,7 @@ Execute na raiz, com Docker Desktop Linux, Java 27, Maven e PowerShell 7:
 
 start.ps1 constrói/inicia os containers e chama initialize.ps1 -AcceptThirdPartyPluginRisk.
 initialize.ps1 troca a senha inicial admin/admin por uma aleatória, cria seis projetos com branch
-principal develop, aplica o Quality Gate de 90% de linhas separadamente e gera um token de análise
+principal develop, aplica o Quality Gate de 100% de cobertura separadamente e gera um token de análise
 restrito a cada projeto, válido por 90 dias. Guarda senha e token somente em .env ignorado pelo Git.
 A senha para entrar na UI está no campo SONAR_ADMIN_PASSWORD desse arquivo local; não publique seu conteúdo.
 
@@ -119,9 +119,9 @@ executam o profile mutation antes do scanner.
 Usa a JVM 27 instalada e aguarda o resultado do Quality Gate. Falha de testes, cobertura,
 scanner ou gate retorna erro. O relatório JaCoCo XML deve existir antes da análise.
 
-O gate local exige line_coverage >= 90 em cada projeto, com resultados e histórico separados. JaCoCo exige o mesmo mínimo em cada serviço,
+O gate local exige coverage, line_coverage e branch_coverage >= 100 em cada projeto, com resultados e histórico separados. JaCoCo exige 100% de linhas e branches em cada serviço,
 impedindo que um módulo com cobertura alta esconda outro com cobertura baixa.
-A cobertura de branches também é medida e publicada, mas não possui limite nesta etapa.
+A cobertura de branches exige o mesmo limite de 100%; serviços sem decisões têm essa medida não aplicável.
 Achados estáticos ficam visíveis; esse gate de cobertura não representa ausência de bugs ou vulnerabilidades.
 
 Mutation Analysis 1.8 importa target/pit-reports/mutations.xml nos projetos de propostas e cadastro.
@@ -129,9 +129,9 @@ initialize.ps1 cria Insurance Java + Mutation Analysis, herdando o perfil Java p
 as regras do plugin, sem desativar as regras padrão. Associa o perfil somente aos dois serviços
 que possuem mutação implementada.
 
-Esses dois projetos usam o gate Insurance - 90 percent line coverage and 100 percent mutation:
-line_coverage >= 90 e dc5_mutationAnalysis_mutations_coverage >= 100, preservando os demais critérios
-nativos criados pelo Sonar. Os quatro serviços de fundação continuam no gate de linhas.
+Esses dois projetos usam o gate Insurance - 100 percent coverage and mutation:
+coverage, line_coverage e branch_coverage >= 100 e dc5_mutationAnalysis_mutations_coverage >= 100, preservando os demais critérios
+nativos criados pelo Sonar. Os quatro serviços de fundação usam Insurance - 100 percent coverage.
 
 Para visualizar, abra o projeto e consulte Measures > Mutation Analysis. As métricas incluem
 Mutation: Coverage, Mutations: Total, Killed: by Tests e Alive: Survivors.
@@ -213,3 +213,7 @@ A migração local de Checkstyle 13.7 para 14.3 preservou o JAR antigo fora da p
 
 Mutation Analysis mantém apenas regras CODE_SMELL por operador, mais os alertas de cobertura
 e status, para não gerar três achados por mutante. Nenhum resultado PITest é excluído.
+
+O gate também exige new_coverage >= 100, preservando os critérios nativos de violações,
+duplicação e revisão de hotspots. Condições existentes são atualizadas sem duplicação pelo bootstrap.
+Resultados atuais: [cobertura completa](../../docs/full-coverage-validation.md).

@@ -143,8 +143,8 @@ e o [relatório Datadog](docs/datadog-validation.md) para resultados e limites e
 
 ## Qualidade de código
 
-mvn clean verify exige 90% de cobertura de linhas por serviço com JaCoCo.
-O profile mutation executa PITest nos dois serviços da jornada, com meta de 90%.
+mvn clean verify exige 100% de cobertura de linhas e branches por serviço com JaCoCo.
+O profile mutation executa PITest nos dois serviços da jornada, com meta de 100% de mutation score.
 SonarQube e PostgreSQL locais preservam histórico e Quality Gate independentes para cada um dos seis microsserviços.
 
 ~~~powershell
@@ -188,3 +188,5 @@ start.ps1 automatiza o consentimento autorizado e configura os seis projetos.
 
 Propostas e cadastro exigem 100% de mutation score em mvn -Pmutation verify e no Sonar.
 A [revisão dos achados](docs/sonar-findings-review.md) descreve os testes que detectam cada mutante.
+
+[Cobertura de 100% por serviço: política, testes e evidências](docs/full-coverage-validation.md).

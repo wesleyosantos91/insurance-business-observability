@@ -59,4 +59,4 @@ O projeto Sonar mantém medidas e histórico próprios e recebe o perfil Checkst
 O build Docker deve usar a raiz do repositório como contexto para copiar essa configuração.
 
 A feature proposal exige 100% de mutation score no profile mutation e no Quality Gate Sonar.
-Execute mvn -Pmutation verify para validar a meta localmente; a cobertura de linhas permanece 90%.
+Execute mvn -Pmutation verify para validar a meta localmente; as coberturas de linhas e branches exigem 100%.
