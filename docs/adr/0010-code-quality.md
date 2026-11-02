@@ -35,3 +35,7 @@ Senhas/token de análise ficam em .env ignorado, com token de projeto válido po
 
 Consulte [guia de qualidade](../code-quality.md), [relatório](../code-quality-validation.md)
 e [infraestrutura](../../infrastructure/sonarqube/README.md).
+
+
+Atualização: a imagem com plugin fixado foi preparada e testada offline; consulte a
+[validação da imagem](../sonar-plugin-validation.md). Preparação não equivale a ativação/importação no servidor.

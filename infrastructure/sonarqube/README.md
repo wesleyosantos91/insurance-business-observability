@@ -4,19 +4,53 @@ Infraestrutura de qualidade independente dos serviços e dos seus bancos.
 
 | Componente | Imagem fixa | Acesso |
 |---|---|---|
-| SonarQube Community Build | sonarqube:26.10.0.133078-community | http://localhost:9000 |
+| SonarQube com Mutation Analysis | insurance/sonarqube:26.10.0.133078-mutation-1.8 | http://localhost:9000 |
 | PostgreSQL | postgres:17.11-bookworm | Apenas rede Docker quality |
 
 O PostgreSQL guarda projetos, resultados, medidas e histórico das análises. O Sonar mantém
 também volumes de índices, extensões e logs. Datadog continua sendo o destino da telemetria
 em execução; Sonar acompanha qualidade estática do código.
 
+## Imagem com plugin fixado
+
+O Compose constrói o Dockerfile desta pasta. Base oficial SonarQube 26.10.0.133078-community,
+fixada também por digest sha256:f95aaa9016dd4e92c7d70691167a6d96dbb5d8acffd61eba1cb4335d364a7840.
+O build baixa Mutation Analysis 1.8 da release oficial e valida o SHA-256:
+
+~~~text
+077e6cbb5496f86bdb590a694d4a123586211245a5bc22fca2bf55595859993f
+~~~
+
+O JAR é embutido em /opt/insurance/plugins, fora do volume de extensões.
+entrypoint.sh prepara a cópia em /opt/sonarqube/extensions/plugins antes de delegar ao entrypoint
+oficial. Isso funciona tanto com volume novo quanto com sonar_extensions já existente.
+Não há download no startup. O runtime permanece como usuário sonarqube (UID 1000).
+
+Repetir a inicialização reaproveita o JAR se o conteúdo for idêntico. Checksum diferente ou outra
+versão do mesmo plugin causa erro explícito, sem apagar arquivos gerenciados pelo operador.
+Atualizações precisam revisar versão, SHA, imagem e eventuais arquivos antigos no volume.
+
+A imagem não inclui senhas/tokens e não aceita automaticamente o aviso do Sonar sobre plugins
+de terceiros. O aceite é uma decisão administrativa separada; não coloque consentimento
+automático como variável da imagem. Na validação inicial, a imagem foi testada sem ativar a
+instância existente; a importação PITest exige validação após ativação autorizada.
+
+~~~powershell
+# Constrói a imagem, sem recriar o Sonar em execução.
+docker compose -f infrastructure/sonarqube/compose.yaml build sonarqube
+# Verifica preparo da imagem em rede desligada e volumes temporários próprios.
+./infrastructure/sonarqube/verify-image.ps1
+~~~
+
+O teste verifica checksum, usuário não root, volume vazio/reutilizado, ausência de rede e rejeição
+de corrupção/versões conflitantes. Não inicia o servidor Sonar nem afirma importação de métricas.
+
 ## Inicializar
 
 Execute na raiz, com Docker Desktop Linux, Java 27, Maven e PowerShell 7:
 
 ~~~powershell
-docker compose -f infrastructure/sonarqube/compose.yaml up -d --wait --wait-timeout 480
+docker compose -f infrastructure/sonarqube/compose.yaml up -d --build --wait --wait-timeout 480
 ./infrastructure/sonarqube/initialize.ps1
 ./infrastructure/sonarqube/analyze.ps1
 ~~~
@@ -69,7 +103,8 @@ Achados estáticos ficam visíveis; esse gate de cobertura não representa ausê
 
 O Sonar não importa automaticamente o mutation score do PITest. analyze.ps1 já executa mutation
 nos dois serviços, produzindo HTML/XML. O Marketplace oferece Mutation Analysis 1.8 como compatível;
-a instalação ainda depende do aceite do aviso do Sonar para plugins de terceiros.
+o JAR já está embutido na imagem customizada; sua ativação na instância e o aceite do aviso
+continuam sendo passos distintos da construção.
 Até a instalação autorizada e validada, o score deve ser consultado nos relatórios PITest.
 
 ## Persistência e operação
@@ -110,3 +145,6 @@ Não são executadas limpezas de volumes pelos scripts.
 
 O POM agregador declara sonar.skip=true; essa propriedade não é herdada pelos serviços,
 que mantêm Spring Boot como parent. Execute o scanner usando o POM de um serviço ou analyze.ps1.
+
+
+Detalhes executados: [validação da imagem com plugin](../../docs/sonar-plugin-validation.md).

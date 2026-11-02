@@ -17,7 +17,10 @@ services:
     mem_limit: 512m
     networks: [quality]
   sonarqube:
-    image: sonarqube:26.10.0.133078-community
+    image: insurance/sonarqube:26.10.0.133078-mutation-1.8
+    build:
+      context: .
+      dockerfile: Dockerfile
     depends_on:
       postgres:
         condition: service_healthy

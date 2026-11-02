@@ -92,3 +92,7 @@ Referências: [JaCoCo releases](https://www.jacoco.org/jacoco/trunk/doc/changes.
 
 O POM agregador declara sonar.skip=true; essa propriedade não é herdada pelos serviços,
 que mantêm Spring Boot como parent. Execute o scanner usando o POM de um serviço ou analyze.ps1.
+
+
+Atualização: a imagem com plugin fixado foi preparada e testada offline; consulte a
+[validação da imagem](sonar-plugin-validation.md). Preparação não equivale a ativação/importação no servidor.

@@ -108,3 +108,7 @@ Senhas e tokens ficam somente no .env local ignorado e não fazem parte da docum
 
 Veja [guia](code-quality.md), [infraestrutura](../infrastructure/sonarqube/README.md)
 e [ADR-0010](adr/0010-code-quality.md).
+
+
+Atualização: a imagem com plugin fixado foi preparada e testada offline; consulte a
+[validação da imagem](sonar-plugin-validation.md). Preparação não equivale a ativação/importação no servidor.
