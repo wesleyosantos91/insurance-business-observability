@@ -149,8 +149,7 @@ SonarQube e PostgreSQL locais preservam histórico e Quality Gate independentes 
 
 ~~~powershell
 mvn -pl services/ms-propostas,services/ms-cadastro -am -Pmutation verify
-docker compose -f infrastructure/sonarqube/compose.yaml up -d --wait --wait-timeout 480
-./infrastructure/sonarqube/initialize.ps1
+./infrastructure/sonarqube/start.ps1
 ./infrastructure/sonarqube/analyze.ps1
 # Um serviço específico:
 ./infrastructure/sonarqube/analyze.ps1 -Service ms-propostas
@@ -182,3 +181,10 @@ separadamente para execução consciente pelo operador.
 Ainda não estão implementados: workflows dos demais domínios, autenticação multi-tenant,
 DLQ, dashboards, alertas de negócio e gestão de incidentes.
 A primeira jornada possui observações Micrometer customizadas e tracing OTel nativo; IDs de negócio pertencem a logs/spans, nunca a tags de métricas.
+
+O [padrão Checkstyle](config/checkstyle/README.md) é obrigatório em mvn validate/verify,
+com zero violações. A imagem Sonar inclui Checkstyle 14.3.0 e Mutation Analysis 1.8;
+start.ps1 automatiza o consentimento autorizado e configura os seis projetos.
+
+Propostas e cadastro exigem 100% de mutation score em mvn -Pmutation verify e no Sonar.
+A [revisão dos achados](docs/sonar-findings-review.md) descreve os testes que detectam cada mutante.

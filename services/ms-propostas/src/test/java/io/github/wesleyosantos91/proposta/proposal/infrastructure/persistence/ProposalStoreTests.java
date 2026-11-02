@@ -88,6 +88,25 @@ class ProposalStoreTests {
         verify(telemetry, never()).registered(any(), any(), anyBoolean());
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void registrationStopsItsObservationAfterCommitOrRollback(boolean commit) {
+        var registry = io.micrometer.observation.ObservationRegistry.create();
+        var meters = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        registry.observationConfig().observationHandler(
+                new io.micrometer.core.instrument.observation.DefaultMeterObservationHandler(meters));
+        var observation = Observation.start("registration", registry);
+        when(telemetry.registration()).thenReturn(observation);
+        if (commit) {
+            assertSame(saved, store.register("key", "AUTO", now));
+            verify(manager).commit(status);
+        } else {
+            assertThrows(IdempotencyConflictException.class, () -> store.register("key", "HOME", now));
+            verify(manager).rollback(status);
+        }
+        assertNull(registry.getCurrentObservation());
+        assertEquals(1, meters.get("registration").timer().count());
+    }
     @Test
     void publicationStatusRequiresPositiveDatabaseValue() {
         when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq("p"))).thenReturn(false, true, null);

@@ -1,67 +1,81 @@
-# Validação — imagem SonarQube com Mutation Analysis
+# Validação — plugins Sonar reproduzíveis
 
-Data: 2026-11-02.
+Data: 2026-11-02. SonarQube Community Build 26.10.0.133078.
 
-## Resultado preparado
+## Imagem
 
-Imagem local insurance/sonarqube:26.10.0.133078-mutation-1.8 construída com sucesso.
+Imagem local: insurance/sonarqube:26.10.0.133078-mutation-1.8-checkstyle-14.3.0.
 
-- Base: sonarqube:26.10.0.133078-community, digest f95aaa9016dd4e92c7d70691167a6d96dbb5d8acffd61eba1cb4335d364a7840.
-- Plugin: mutation-analysis-plugin-1.8.jar da release oficial devcon5ch/mutation-analysis-plugin.
-- SHA-256: 077e6cbb5496f86bdb590a694d4a123586211245a5bc22fca2bf55595859993f.
-- Image ID validado: fd7d829e7e3bbfb369ad30517918e51ffbf9c0e0a9b3d1ff4dad664a058a9eae.
-- Runtime: usuário sonarqube, UID 1000, delegando ao entrypoint oficial.
-- Nenhum download de plugin no runtime e nenhuma credencial dentro da imagem.
+| Artefato | Versão | SHA-256 |
+|---|---|---|
+| Sonar base oficial | 26.10.0.133078-community | f95aaa9016dd4e92c7d70691167a6d96dbb5d8acffd61eba1cb4335d364a7840 |
+| Mutation Analysis | 1.8 | 077e6cbb5496f86bdb590a694d4a123586211245a5bc22fca2bf55595859993f |
+| Sonar Checkstyle | 14.3.0 | 79ec5c888111dccd180c8919b218a54b5390d54a91b36ad067b6b7610e2da5c9 |
 
-## Testes executados
+Os JARs vêm das releases oficiais dos respectivos projetos, com checksum verificado no build.
+Ficam em /opt/insurance/plugins, fora do volume que poderia ocultá-los. Entrypoint não root
+UID 1000 copia somente quando necessário e rejeita adulteração, versões conflitantes e downloads
+Marketplace pendentes para esses plugins. Não baixa artefatos em runtime e não apaga arquivos existentes.
 
-docker compose config e docker compose build sonarqube aprovados.
-verify-image.ps1 executado com sucesso:
+## Verificações executadas
 
-1. Primeiro container com volume vazio recebeu o JAR esperado.
-2. Segundo container com o mesmo volume reutilizou o JAR sem substituição.
-3. SHA-256 e UID foram verificados dentro do container.
-4. Todos os containers de teste executaram com --network none.
-5. JAR adulterado foi rejeitado com erro de checksum.
-6. Segunda versão conflitante foi rejeitada; arquivo conflitante preservado.
-7. Apenas o volume temporário criado pelo teste foi removido.
+- Docker Compose válido e imagem construída.
+- verify-image.ps1: os dois plugins passaram em volume vazio e reutilizado, sem rede.
+- Checksums e UID 1000 confirmados no container.
+- Adulteração, versão conflitante e instalação Marketplace pendente foram rejeitadas para ambos.
+- Apenas volumes temporários criados pelo teste foram removidos.
+- API /api/plugins/installed confirmou Mutation Analysis 1.8 e Checkstyle 14.3.0.
+- Maven validate passou nos oito módulos, com zero violações Checkstyle.
+- verify-policy.ps1: violação deliberada MethodName causou falha; código conforme passou.
+- Maven clean verify inicial: BUILD SUCCESS, 96 testes; na revalidação final com -Pmutation foram 101 testes e meta de 100% de mutação, todos aprovados.
 
-Uma falha inicial de permissão mostrou que Docker COPY --chmod=0444 também criou diretórios
-sem permissão de travessia. Corrigidos os diretórios da imagem para 0555 antes de repetir
-todos os testes como usuário não root.
+## Consentimento e bootstrap
 
-## Volume existente e recriação
+O usuário autorizou explicitamente automatizar o aceite de plugins de terceiros.
+start.ps1 constrói/inicia a imagem e chama initialize.ps1 -AcceptThirdPartyPluginRisk.
+accept-plugin-risk.ps1 verifica sonar.plugins.risk.consent pela API, grava ACCEPTED somente
+quando necessário e confirma o resultado. Sem a flag não altera consentimento; suporta WhatIf.
+O fluxo foi testado com API simulada para gravação/readback, idempotência, WhatIf e ausência da flag.
+Na instância real o aceite já estava ACCEPTED ao iniciar esta etapa; o setter e a leitura foram
+verificados com esse valor. O script não revogou consentimento para simular uma primeira instalação.
 
-O plugin fica em /opt/insurance/plugins na imagem, pois um volume de extensões preexistente
-pode ocultar o conteúdo incluído diretamente em /opt/sonarqube/extensions.
-O entrypoint prepara a cópia e valida conflitos antes de executar o Sonar.
-O Compose já referencia a imagem customizada e possui build local.
+Senhas e tokens não estão na imagem nem no Git; ficam no .env local ignorado.
+O consentimento persiste no banco Sonar. O bootstrap reaproveita projetos, credenciais e gates.
 
-A imagem é construída localmente; não foi publicada em registry Docker.
-Não foram apagados projetos, dados PostgreSQL, índices ou extensões da instância existente.
+## Perfis e importação
 
-## Ativação e consentimento
+Checkstyle: 20 regras declaradas em config/checkstyle/checkstyle.xml sincronizadas via API,
+com herança do perfil Java padrão. Todos os seis projetos recebem a política.
+Propostas/cadastro usam um perfil filho com Mutation Analysis, sem representações duplicadas.
+Os gates exigem 90% de linhas e 100% de mutação, além dos critérios nativos de código novo.
+Os testes protegem contexto do callback, logs de recuperação, ciclo de vida das observações e deduplicação de métricas.
+Um overload package-private recebe RandomGenerator para verificar o jitter deterministicamente; a política de produção é preservada.
 
-A instância existente permaneceu na imagem oficial durante esses testes.
-Preparação do JAR e sucesso do teste offline não demonstram servidor iniciado com plugin nem
-importação dos resultados PITest.
+A importação real, repetida após adicionar Checkstyle, confirmou:
+propostas 110/110 e cadastro 29/29, ambos 100%, com gates aprovados.
+Os seis gates foram aprovados e a API confirmou zero achados abertos no conjunto dos seis projetos.
+Os seis sobreviventes anteriores foram detectados por testes melhores; não foram suprimidos.
+Os seis Dockerfiles também foram construídos com Spring AOT e JVM AOT Cache.
 
-O Sonar havia bloqueado a instalação via Marketplace por exigir aceite do aviso sobre
-plugins de terceiros. Esse aceite foi solicitado explicitamente e não é inferido nem embutido
-na imagem. Ativação e importação dependem da autorização administrativa correspondente.
+## Ocorrências
 
-## Arquivos
+Uma instalação pendente do Marketplace colocou Checkstyle 13.7.0 no primeiro boot, substituindo
+o JAR preparado pelo entrypoint. O log Sonar confirmou a substituição. O JAR foi preservado em
+extensions/insurance-plugin-backups, e a versão 14.3.0 foi ativada e verificada pela API.
+A proteção contra downloads pendentes foi acrescentada e testada para impedir repetição silenciosa.
 
-- infrastructure/sonarqube/Dockerfile: build multi-stage com artefato e base fixados.
-- infrastructure/sonarqube/entrypoint.sh: preparo idempotente, sem rede, respeitando volumes existentes.
-- infrastructure/sonarqube/compose.yaml: build e tag customizada.
-- infrastructure/sonarqube/.dockerignore: somente Dockerfile/entrypoint entram no contexto.
-- infrastructure/sonarqube/.gitattributes: script shell com LF.
-- infrastructure/sonarqube/verify-image.ps1: teste offline reproduzível.
-- README da infraestrutura e referências de qualidade atualizados.
+Durante o build inicial da imagem de mutação, diretórios criados por COPY --chmod=0444
+não permitiam travessia ao usuário não root; foram corrigidos para 0555.
+Um JAR event-contracts em uso no Windows impediu reinstalação. As classes instaladas foram
+comparadas com as geradas; a análise utilizou -SkipContractInstall sem encerrar processos do usuário.
+A flag exige contrato previamente instalado e atualizado.
 
-Não houve mudanças em serviços Java, contratos, POMs ou Dockerfiles AOT nesta etapa.
+A imagem foi construída localmente, sem publicação em registry Docker.
+Nenhum banco de negócio, projeto Sonar ou volume persistente foi apagado.
 
-Referências: [release do plugin](https://github.com/devcon5ch/mutation-analysis-plugin/releases/tag/v1.8),
-[Docker SonarQube oficial](https://github.com/SonarSource/docker-sonarqube),
+Referências: [Mutation Analysis 1.8](https://github.com/devcon5ch/mutation-analysis-plugin/releases/tag/v1.8),
+[Checkstyle 14.3.0](https://github.com/checkstyle/sonar-checkstyle/releases/tag/checkstyle-sonar-plugin-14.3.0),
 [operação local](../infrastructure/sonarqube/README.md).
+
+A regressão final também aprovou 15 cenários BDD/Testcontainers com as duas imagens AOT reconstruídas.
+Veja o [resultado final](code-quality-validation.md#resultado-final--zero-apontamentos-de-mutação).

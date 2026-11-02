@@ -50,3 +50,13 @@ A configuração de observabilidade não adiciona tags com IDs de negócio.
 
 Veja [ADRs](../../docs/adr/README.md), [AOT](../../docs/containers.md) e
 [validação de observabilidade](../../docs/observability-validation.md).
+
+## Padrão de código
+
+Checkstyle 14.3.0 é obrigatório em mvn validate/verify, com zero violações em fontes e testes.
+Regras compartilhadas e comando de teste: [padrão Java](../../config/checkstyle/README.md).
+O projeto Sonar mantém medidas e histórico próprios e recebe o perfil Checkstyle no bootstrap.
+O build Docker deve usar a raiz do repositório como contexto para copiar essa configuração.
+
+A feature proposal exige 100% de mutation score no profile mutation e no Quality Gate Sonar.
+Execute mvn -Pmutation verify para validar a meta localmente; a cobertura de linhas permanece 90%.

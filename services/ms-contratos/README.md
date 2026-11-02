@@ -17,7 +17,7 @@ Execute a partir da raiz do repositório:
 
 ~~~powershell
 mvn -pl services/ms-contratos -am clean verify
-docker build -f services/ms-contratos/Dockerfile -t insurance/ms-contratos:datadog-aot services/ms-contratos
+docker build -f services/ms-contratos/Dockerfile -t insurance/ms-contratos:datadog-aot .
 ~~~
 
 A imagem executa como usuário 10001:10001 e inclui Spring AOT, JVM AOT Cache e
@@ -41,3 +41,10 @@ A configuração de observabilidade não adiciona tags com IDs de negócio.
 
 Veja [ADRs](../../docs/adr/README.md), [AOT](../../docs/containers.md) e
 [resultado da validação Datadog](../../docs/datadog-validation.md).
+
+## Padrão de código
+
+Checkstyle 14.3.0 é obrigatório em mvn validate/verify, com zero violações em fontes e testes.
+Regras compartilhadas e comando de teste: [padrão Java](../../config/checkstyle/README.md).
+O projeto Sonar mantém medidas e histórico próprios e recebe o perfil Checkstyle no bootstrap.
+O build Docker deve usar a raiz do repositório como contexto para copiar essa configuração.

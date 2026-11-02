@@ -2,7 +2,8 @@
 param(
     [string]$BaseUrl = 'http://localhost:9000',
     [ValidateSet('all','ms-propostas','ms-cadastro','ms-analise','ms-contratos','ms-endossos','ms-pagamentos')]
-    [string]$Service = 'all'
+    [string]$Service = 'all',
+    [switch]$SkipContractInstall
 )
 $ErrorActionPreference = 'Stop'
 $envPath = Join-Path $PSScriptRoot '.env'
@@ -24,7 +25,7 @@ $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 Push-Location $repo
 try {
     # The service POMs retain Spring Boot as parent. Install only their generated contract dependency first.
-    if ($services | Where-Object { $_ -in @('ms-propostas','ms-cadastro') }) {
+    if (-not $SkipContractInstall -and ($services | Where-Object { $_ -in @('ms-propostas','ms-cadastro') })) {
         & mvn -B -ntp -pl libraries/event-contracts -am install
         if ($LASTEXITCODE -ne 0) { throw 'Contract module installation failed.' }
     }

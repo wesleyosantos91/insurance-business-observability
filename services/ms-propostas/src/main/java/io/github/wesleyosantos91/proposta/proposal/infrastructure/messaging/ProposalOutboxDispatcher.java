@@ -2,6 +2,7 @@ package io.github.wesleyosantos91.proposta.proposal.infrastructure.messaging;
 
 import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.random.RandomGenerator;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -114,9 +115,13 @@ public class ProposalOutboxDispatcher {
     }
 
     static long retryDelayMillis(int attempts) {
+        return retryDelayMillis(attempts, ThreadLocalRandom.current());
+    }
+
+    static long retryDelayMillis(int attempts, RandomGenerator random) {
         var ceiling = retryCeilingMillis(attempts);
         // Equal jitter: retain half of the exponential delay and randomize the other half.
-        return ThreadLocalRandom.current().nextLong(ceiling / 2, ceiling + 1);
+        return random.nextLong(ceiling / 2, ceiling + 1);
     }
 
     static long retryCeilingMillis(int attempts) {

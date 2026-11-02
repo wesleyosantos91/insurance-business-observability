@@ -49,6 +49,16 @@ class ProposalOutboxDispatcherTests {
     }
 
     @Test
+    void equalJitterPassesExactInclusiveBoundsToTheRandomGenerator() {
+        for (int attempt : new int[] { 1, 7, Integer.MAX_VALUE }) {
+            var random = mock(java.util.random.RandomGenerator.class);
+            var ceiling = ProposalOutboxDispatcher.retryCeilingMillis(attempt);
+            when(random.nextLong(ceiling / 2, ceiling + 1)).thenReturn(ceiling);
+            assertEquals(ceiling, ProposalOutboxDispatcher.retryDelayMillis(attempt, random));
+            verify(random).nextLong(ceiling / 2, ceiling + 1);
+        }
+    }
+    @Test
     void leaseMustOutliveThePublicationWait() {
         assertThrows(IllegalArgumentException.class,
                 () -> new OutboxProperties(Duration.ofSeconds(6), Duration.ofSeconds(6)));

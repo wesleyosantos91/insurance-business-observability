@@ -121,8 +121,8 @@ services:
     image: insurance/ms-analise:datadog-aot
     container_name: insurance-observability-ms-analise
     build:
-      context: ../../services/ms-analise
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: services/ms-analise/Dockerfile
     environment:
       <<: *app-environment
       DD_SERVICE: ms-analise
@@ -138,8 +138,8 @@ services:
     image: insurance/ms-contratos:datadog-aot
     container_name: insurance-observability-ms-contratos
     build:
-      context: ../../services/ms-contratos
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: services/ms-contratos/Dockerfile
     environment:
       <<: *app-environment
       DD_SERVICE: ms-contratos
@@ -155,8 +155,8 @@ services:
     image: insurance/ms-endossos:datadog-aot
     container_name: insurance-observability-ms-endossos
     build:
-      context: ../../services/ms-endossos
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: services/ms-endossos/Dockerfile
     environment:
       <<: *app-environment
       DD_SERVICE: ms-endossos
@@ -172,8 +172,8 @@ services:
     image: insurance/ms-pagamentos:datadog-aot
     container_name: insurance-observability-ms-pagamentos
     build:
-      context: ../../services/ms-pagamentos
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: services/ms-pagamentos/Dockerfile
     environment:
       <<: *app-environment
       DD_SERVICE: ms-pagamentos

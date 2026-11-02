@@ -1,5 +1,8 @@
 [CmdletBinding()]
-param([string]$BaseUrl = 'http://localhost:9000')
+param(
+    [string]$BaseUrl = 'http://localhost:9000',
+    [switch]$AcceptThirdPartyPluginRisk
+)
 $ErrorActionPreference = 'Stop'
 $services = @('ms-propostas','ms-cadastro','ms-analise','ms-contratos','ms-endossos','ms-pagamentos')
 $gateName = 'Insurance - 90 percent line coverage'
@@ -32,6 +35,9 @@ if (-not $settings.SONAR_ADMIN_PASSWORD) {
     Save-LocalSettings
     $script:headers = Basic-Headers $password
 }
+if ($AcceptThirdPartyPluginRisk) {
+    & (Join-Path $PSScriptRoot 'accept-plugin-risk.ps1') -BaseUrl $BaseUrl -AcceptThirdPartyPluginRisk
+}
 $gates = Invoke-Sonar '/api/qualitygates/list' @{} 'Get'
 if (-not ($gates.qualitygates | Where-Object name -eq $gateName)) {
     Invoke-Sonar '/api/qualitygates/create' @{name=$gateName} | Out-Null
@@ -57,5 +63,64 @@ foreach ($service in $services) {
         Save-LocalSettings
     }
     Write-Host "Project and 90% line-coverage gate configured: $BaseUrl/dashboard?id=$projectKey"
+}
+& (Join-Path $PSScriptRoot 'configure-checkstyle.ps1') -BaseUrl $BaseUrl
+$installed = Invoke-Sonar '/api/plugins/installed' @{} 'Get'
+$mutation = $installed.plugins | Where-Object key -eq 'mutationanalysis'
+if ($mutation) {
+    if ($mutation.version -ne '1.8') { throw "Unexpected Mutation Analysis version $($mutation.version). Rebuild the pinned image." }
+    $profileName = 'Insurance Java + Mutation Analysis'
+    $profiles = Invoke-Sonar '/api/qualityprofiles/search' @{language='java'} 'Get'
+    $profile = $profiles.profiles | Where-Object name -eq $profileName
+    if (-not $profile) {
+        $created = Invoke-Sonar '/api/qualityprofiles/create' @{language='java';name=$profileName}
+        $profile = $created.profile
+    }
+    $parent = $profiles.profiles | Where-Object name -eq 'Insurance Java + Checkstyle'
+    if (-not $parent) { throw 'Checkstyle parent profile missing; run the shared rules bootstrap first.' }
+    Invoke-Sonar '/api/qualityprofiles/change_parent' @{
+        language='java';qualityProfile=$profileName;parentQualityProfile=$parent.name
+    } | Out-Null
+    # Operator rules have BUG and CODE_SMELL alternatives; the generic survived rule
+    # overlaps both. Keep one CODE_SMELL per operator instead of reporting each mutant three times.
+    $rules = Invoke-Sonar '/api/rules/search' @{repositories='mutation.analysis.java';ps='100'} 'Get'
+    if ($rules.total -gt 100) { throw 'Mutation rule catalog exceeds one page; review the pinned plugin configuration.' }
+    $active = Invoke-Sonar '/api/rules/search' @{
+        repositories='mutation.analysis.java';activation='true';qprofile=$profile.key;ps='100'
+    } 'Get'
+    foreach ($rule in $rules.rules) {
+        $enabled = $rule.type -eq 'CODE_SMELL' -or $rule.key -in @(
+            'mutation.analysis.java:mutant.lurking', 'mutation.analysis.java:mutant.unknownStatus'
+        )
+        $alreadyActive = $rule.key -in $active.rules.key
+        if ($enabled -eq $alreadyActive) { continue }
+        $action = if ($enabled) { 'activate_rule' } else { 'deactivate_rule' }
+        Invoke-Sonar "/api/qualityprofiles/$action" @{key=$profile.key;rule=$rule.key} | Out-Null
+    }
+    $mutationGateName = 'Insurance - 90 percent line coverage and 100 percent mutation'
+    $gates = Invoke-Sonar '/api/qualitygates/list' @{} 'Get'
+    if (-not ($gates.qualitygates | Where-Object name -eq $mutationGateName)) {
+        Invoke-Sonar '/api/qualitygates/create' @{name=$mutationGateName} | Out-Null
+    }
+    $gate = Invoke-Sonar '/api/qualitygates/show' @{name=$mutationGateName} 'Get'
+    $thresholds = @{line_coverage='90';dc5_mutationAnalysis_mutations_coverage='100'}
+    foreach ($metric in $thresholds.Keys) {
+        if (-not ($gate.conditions | Where-Object metric -eq $metric)) {
+            Invoke-Sonar '/api/qualitygates/create_condition' @{
+                gateName=$mutationGateName;metric=$metric;op='LT';error=$thresholds[$metric]
+            } | Out-Null
+        }
+    }
+    foreach ($service in @('ms-propostas','ms-cadastro')) {
+        Invoke-Sonar '/api/qualityprofiles/add_project' @{
+            language='java';project="insurance-$service";qualityProfile=$profileName
+        } | Out-Null
+        Invoke-Sonar '/api/qualitygates/select' @{
+            gateName=$mutationGateName;projectKey="insurance-$service"
+        } | Out-Null
+    }
+    Write-Host 'Mutation Analysis 1.8 verified; Java rules and 100% mutation gates configured for proposals/cadastro.'
+} else {
+    throw 'Mutation Analysis is not installed; use start.ps1 to build and start the pinned image.'
 }
 Write-Host 'Passwords and project-scoped tokens are saved only in the ignored infrastructure/sonarqube/.env.'

@@ -12,7 +12,10 @@
     <artifactId>event-contracts</artifactId>
     <packaging>jar</packaging>
     <name>event-contracts</name>
-    <properties><avro.version>1.12.1</avro.version></properties>
+    <properties>
+        <avro.version>1.12.1</avro.version>
+        <checkstyle.config.directory>${project.basedir}/../../config/checkstyle</checkstyle.config.directory>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.avro</groupId>

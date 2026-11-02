@@ -24,7 +24,7 @@ ou um detalhe sem efeito observável. Nenhum desses indicadores promete ausênci
 - event-contracts contém somente código Avro gerado: não recebe meta artificial de cobertura desse
   código de terceiros. Seus testes de contrato/serialização continuam no Reactor.
 - PITest 1.30.1 e plugin JUnit Platform 1.2.3: profile mutation nos dois serviços que possuem
-  implementação da jornada; exige 90% de mutation score e 90% de linhas nas classes mutadas.
+  implementação da jornada; exige 100% de mutation score e 90% de linhas nas classes mutadas.
 - Escopo de mutação: package proposal e subpackages de propostas/cadastro, incluindo aplicação,
   HTTP quando existir, persistência, mensageria e observabilidade.
 - Configuração de wiring e bootstrap Spring ficam fora da mutação, mas dentro do JaCoCo.
@@ -83,7 +83,7 @@ como cobertura do processo Surefire. Não foi alterado o treinamento/cache AOT p
 nas imagens de produção.
 
 Dados de cobertura/mutação são qualidade de código, separados das métricas de negócio enviadas ao Datadog.
-PITest continua com relatórios próprios, sem afirmar importação nativa do seu score no Sonar.
+Mutation Analysis 1.8 importa os relatórios PITest no Sonar; o plugin não executa os testes por conta própria.
 
 Referências: [JaCoCo releases](https://www.jacoco.org/jacoco/trunk/doc/changes.html),
 [PITest Maven](https://pitest.org/quickstart/maven/),
@@ -94,5 +94,34 @@ O POM agregador declara sonar.skip=true; essa propriedade não é herdada pelos 
 que mantêm Spring Boot como parent. Execute o scanner usando o POM de um serviço ou analyze.ps1.
 
 
-Atualização: a imagem com plugin fixado foi preparada e testada offline; consulte a
-[validação da imagem](sonar-plugin-validation.md). Preparação não equivale a ativação/importação no servidor.
+Atualização: a imagem com plugin fixado foi preparada, ativada e testada; consulte a
+[validação da imagem](sonar-plugin-validation.md). A ativação e importação no servidor também foram executadas; veja os resultados no relatório.
+
+
+O bootstrap automatizado é ./infrastructure/sonarqube/start.ps1. Ele registra o aceite pela API,
+configura o perfil Java herdado e os gates de 90% de linhas e 100% de mutação somente em propostas/cadastro.
+A execução do BDD em containers continua fora da cobertura JaCoCo até haver instrumentação específica.
+
+## Checkstyle obrigatório
+
+Maven Checkstyle Plugin 3.6.0 / motor 14.3.0 executa em validate nos seis serviços e em
+event-contracts. Qualquer violação falha o build; fontes próprias de produção, testes e BDD
+são verificadas. Código gerado não participa. Regras e teste positivo/negativo estão em
+[config/checkstyle](../config/checkstyle/README.md).
+
+O plugin Sonar Checkstyle 14.3.0 é embutido na imagem com checksum. start.ps1 sincroniza o
+mesmo XML em um perfil herdado do padrão Java e associa os seis projetos.
+Propostas/cadastro herdam também as regras de mutação. Não são ativadas simultaneamente
+as três representações de cada mutante. Consulte a [revisão dos achados](sonar-findings-review.md).
+
+## Zero mutantes sobreviventes
+
+A meta de mutação dos dois serviços é 100%, verificada em mvn -Pmutation verify e nas análises
+Sonar. O profile continua explícito; mvn verify sem esse profile executa Checkstyle, testes e JaCoCo.
+A meta de linhas permanece 90%. Não há exclusão de mutantes ou relaxamento de regras para atingir o resultado.
+Se um mutante futuro parecer equivalente, investigue e documente a semântica; não suprima automaticamente.
+
+Os testes verificam diagnósticos de recuperação, causa raiz persistida, stop das observações,
+limites exatos do equal jitter e o efeito individual de eventos novos/duplicados nas métricas.
+A fonte de aleatoriedade é parametrizável somente em um overload package-private para testes
+determinísticos; a execução normal continua usando ThreadLocalRandom, sem alterar backoff ou leases.

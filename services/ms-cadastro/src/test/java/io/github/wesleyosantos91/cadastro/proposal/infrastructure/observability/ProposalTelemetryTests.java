@@ -19,6 +19,9 @@ class ProposalTelemetryTests {
         var event = proposal(occurredAt);
         var observation = telemetry.consumption();
         telemetry.committed(observation, event, true);
+        assertEquals(1, meters.get("insurance.proposal.delivery.latency").timer().count());
+        assertEquals(2, meters.get("insurance.proposal.delivery.latency").timer()
+                .totalTime(java.util.concurrent.TimeUnit.SECONDS));
         telemetry.committed(observation, event, false);
         observation.stop();
         assertEquals(1, meters.counter("insurance.proposal.receipts", "outcome", "new").count());
@@ -32,6 +35,15 @@ class ProposalTelemetryTests {
         }));
     }
 
+    @Test
+    void aDuplicateAsTheFirstReceiptDoesNotCreateADeliveryLatencyMeasurement() {
+        var meters = new SimpleMeterRegistry();
+        var now = Instant.parse("2026-11-01T12:00:00Z");
+        var telemetry = new ProposalTelemetry(ObservationRegistry.NOOP, meters, Clock.fixed(now, ZoneOffset.UTC));
+        telemetry.committed(telemetry.consumption(), proposal(now.minusSeconds(2)), false);
+        assertNull(meters.find("insurance.proposal.delivery.latency").timer());
+        assertEquals(1, meters.counter("insurance.proposal.receipts", "outcome", "duplicate").count());
+    }
     @Test
     void clockSkewDoesNotCreateNegativeDeliveryDurations() {
         var meters = new SimpleMeterRegistry();

@@ -35,3 +35,6 @@ priorize o README principal, os ADRs e os documentos de idempotência/Datadog.
 - [Validação de qualidade](code-quality-validation.md)
 
 - [Imagem SonarQube com Mutation Analysis](sonar-plugin-validation.md)
+
+- [Padrão Checkstyle e teste de bloqueio](../config/checkstyle/README.md)
+- [Revisão dos apontamentos Sonar](sonar-findings-review.md)

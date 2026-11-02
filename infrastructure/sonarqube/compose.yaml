@@ -17,7 +17,7 @@ services:
     mem_limit: 512m
     networks: [quality]
   sonarqube:
-    image: insurance/sonarqube:26.10.0.133078-mutation-1.8
+    image: insurance/sonarqube:26.10.0.133078-mutation-1.8-checkstyle-14.3.0
     build:
       context: .
       dockerfile: Dockerfile

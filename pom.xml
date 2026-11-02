@@ -42,6 +42,7 @@
     </modules>
 
     <properties>
+        <checkstyle.config.directory>${project.basedir}/config/checkstyle</checkstyle.config.directory>
         <java.version>27</java.version>
         <!-- Analyze each service with its own POM; the aggregator is not a Sonar project. -->
         <sonar.skip>true</sonar.skip>
@@ -52,6 +53,47 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>14.3.0</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <configLocation>${checkstyle.config.directory}/checkstyle.xml</configLocation>
+                    <inputEncoding>UTF-8</inputEncoding>
+                    <sourceDirectories>
+                        <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                    </sourceDirectories>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <testSourceDirectories>
+                        <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
+                        <testSourceDirectory>${project.basedir}/src/integration-test/java</testSourceDirectory>
+                    </testSourceDirectories>
+                    <excludeGeneratedSources>true</excludeGeneratedSources>
+                    <includeResources>false</includeResources>
+                    <includeTestResources>false</includeTestResources>
+                    <consoleOutput>true</consoleOutput>
+                    <failOnViolation>true</failOnViolation>
+                    <violationSeverity>warning</violationSeverity>
+                    <maxAllowedViolations>0</maxAllowedViolations>
+                    <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>check-code-style</id>
+                        <phase>validate</phase>
+                        <goals><goal>check</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>

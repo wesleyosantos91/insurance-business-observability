@@ -12,7 +12,7 @@ medidas e resultado de Quality Gate próprios. O gate exige line_coverage >= 90.
 A análise agregada inicial insurance-business-observability permanece somente como histórico;
 os scripts não a atualizam e nenhum projeto/volume foi apagado.
 
-## Cobertura medida
+## Cobertura inicial (histórico)
 
 | Serviço | Linhas JaCoCo | Percentual JaCoCo | line_coverage Sonar | coverage Sonar | Gate |
 |---|---:|---:|---:|---:|---|
@@ -33,7 +33,7 @@ fencing, falha após ACK, retry/jitter, métricas indisponíveis, correlação e
 Não foram excluídas classes próprias para atingir a meta.
 Somente proxies SpringCGLIB gerados são excluídos explicitamente por divergência de bytecode em AOT.
 
-## Mutação
+## Mutação inicial (histórico)
 
 PITest 1.30.1 e plugin JUnit Platform 1.2.3 executados com Java 27 e JUnit 6.
 
@@ -80,12 +80,16 @@ Testes unitários JDBC não substituem os cenários PostgreSQL/Kafka reais.
 
 ## Importação PITest no Sonar
 
-O plugin Maven do PITest está aplicado e seus gates estão ativos.
-A instância oferece Mutation Analysis 1.8 como COMPATIBLE no Marketplace, mas a tentativa de
-instalação foi bloqueada pelo aviso de consentimento para plugins de terceiros.
-O aceite foi solicitado separadamente ao usuário e não foi presumido.
-Nenhuma importação de mutation score no Sonar foi declarada validada.
-Até a instalação autorizada e validação correspondente, use os relatórios PITest locais.
+O plugin Mutation Analysis 1.8 foi autorizado, instalado e validado com importação real.
+A instalação e o consentimento são automatizados por start.ps1; Checkstyle 14.3.0 também
+foi incorporado à imagem e configurado nos seis projetos.
+Veja a [validação dos plugins](sonar-plugin-validation.md) e a [revisão dos achados](sonar-findings-review.md).
+
+Os números das seções anteriores registram a execução inicial de qualidade.
+Na atualização, um teste adicional do callback Kafka elevou propostas para 104/109 (95,4%).
+O Reactor foi novamente validado com Checkstyle obrigatório: 96 testes regulares aprovados,
+sendo contratos 3, propostas 63, cadastro 26 e serviços de fundação 4.
+Os cenários BDD e as validações AOT acima pertencem à execução inicial; não são somados aos 96.
 
 ## Arquivos
 
@@ -110,5 +114,77 @@ Veja [guia](code-quality.md), [infraestrutura](../infrastructure/sonarqube/READM
 e [ADR-0010](adr/0010-code-quality.md).
 
 
-Atualização: a imagem com plugin fixado foi preparada e testada offline; consulte a
-[validação da imagem](sonar-plugin-validation.md). Preparação não equivale a ativação/importação no servidor.
+Atualização: a imagem com os dois plugins fixados foi construída, iniciada e testada; consulte a
+[validação da imagem](sonar-plugin-validation.md). A API confirmou os plugins ativos e as análises reais importaram os relatórios.
+
+## Revalidação com Checkstyle e Mutation Analysis ativos
+
+Execução posterior em 2026-11-02:
+
+| Serviço | Linhas Sonar | Mutação Sonar | Mortos/total | Checkstyle | Quality Gate |
+|---|---:|---:|---:|---:|---|
+| ms-propostas | 99,0% | 95,4% | 104/109 | 0 achados | OK |
+| ms-cadastro | 96,3% | 96,6% | 28/29 | 0 achados | OK |
+| ms-analise | 100% | Não aplicado | — | 0 achados | OK |
+| ms-contratos | 100% | Não aplicado | — | 0 achados | OK |
+| ms-endossos | 100% | Não aplicado | — | 0 achados | OK |
+| ms-pagamentos | 100% | Não aplicado | — | 0 achados | OK |
+
+- mvn clean verify: BUILD SUCCESS, 96 testes regulares, zero falhas/erros/ignorados.
+- verify-policy.ps1: violação deliberada MethodName rejeitada no validate; fonte conforme aceita.
+- start.ps1: imagem construída, Sonar saudável, consentimento existente reaproveitado e perfis configurados.
+- analyze.ps1 -SkipContractInstall: seis análises concluídas, seis QUALITY GATE STATUS: PASSED.
+- PITest executado novamente nos dois serviços, antes do scanner, com os mesmos limites de 90%.
+- API confirmou seis achados abertos, todos de mutação: cinco em propostas, um em cadastro.
+  Antes da correção das regras sobrepostas, os mesmos seis mutantes geravam 18 achados.
+- Docker build dos seis serviços: concluído com testes, Spring AOT e JVM AOT Cache.
+  Os contextos agora usam a raiz para copiar o XML Checkstyle. Não foi necessário subir aplicações.
+- verify-image.ps1: os dois JARs passaram na verificação offline de volume novo/reutilizado,
+  checksum, usuário e rejeição de corrupção, versões conflitantes e downloads pendentes.
+
+O Compose Datadog não foi utilizado para construir as imagens porque exige DD_API_KEY na
+interpolação. Os mesmos Dockerfiles foram construídos diretamente, sem credenciais SaaS.
+Não foi validado envio de telemetria ao Datadog nesta etapa.
+Os cenários BDD/Testcontainers não foram reexecutados nesta atualização de ferramentas de qualidade.
+
+Evidências locais: tests/integration/target/sonar-plugin e logs em TEMP com prefixos
+insurance-sonar-checkstyle e insurance-checkstyle. O scanner rodou antes do commit e informou
+blame ausente para arquivos modificados; análise e gates foram concluídos.
+
+## Resultado final — zero apontamentos de mutação
+
+Revalidação final de 2026-11-02, posterior aos resultados históricos acima:
+
+| Serviço | Linhas Sonar | Mutantes KILLED/total | Mutation score | Gate |
+|---|---:|---:|---:|---|
+| ms-propostas | 99,0% | 110/110 | 100% | OK |
+| ms-cadastro | 96,3% | 29/29 | 100% | OK |
+| ms-analise | 100% | Não aplicado | Não aplicado | OK |
+| ms-contratos | 100% | Não aplicado | Não aplicado | OK |
+| ms-endossos | 100% | Não aplicado | Não aplicado | OK |
+| ms-pagamentos | 100% | Não aplicado | Não aplicado | OK |
+
+A API /api/issues/search confirmou zero achados abertos no conjunto dos seis projetos.
+Não há achados Checkstyle ou Mutation Analysis pendentes. Os XML PITest foram verificados:
+todos os 139 mutantes estão KILLED, sem sobreviventes, sem cobertura, timeout ou status desconhecido.
+A regra de mutation score agora exige 100% no Maven e nos gates dos dois serviços;
+a meta de linhas permanece 90%. O gate anterior foi preservado no catálogo, sem apagar histórico.
+
+Comandos concluídos:
+- tests/integration/idempotency-bdd.ps1: duas imagens AOT reconstruídas, 101 testes regulares
+  e 15 cenários BDD/Testcontainers, zero falhas, erros ou ignorados; BUILD SUCCESS.
+- mvn -Pmutation clean verify: oito módulos SUCCESS, 101 testes regulares aprovados e os
+  dois gates PITest de 100% aprovados; BUILD SUCCESS.
+- analyze.ps1 -Service ms-propostas -SkipContractInstall e o equivalente para ms-cadastro:
+  PITest e scanner executados novamente, ambos QUALITY GATE STATUS: PASSED.
+- API dos seis projetos: gates OK, scores 100% nos dois serviços e zero achados abertos.
+
+Apenas uma alteração de produção foi necessária: overload package-private do cálculo de jitter
+recebendo RandomGenerator. A chamada normal mantém ThreadLocalRandom e os mesmos limites,
+backoff e leases. Demais alterações são testes e política de qualidade.
+Os testes corrigidos estão explicados na [revisão](sonar-findings-review.md).
+
+Os relatórios BDD foram arquivados antes do clean seguinte em
+tests/integration/target/zero-mutations-bdd. Métricas/gates e a consulta de zero achados foram
+salvos em tests/integration/target/sonar-plugin, ambos ignorados pelo Git.
+Logs da execução final ficam em TEMP com prefixo insurance-zero-mutations.

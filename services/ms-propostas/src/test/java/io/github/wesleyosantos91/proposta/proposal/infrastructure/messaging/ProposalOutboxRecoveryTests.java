@@ -95,7 +95,7 @@ class ProposalOutboxRecoveryTests {
     void databaseFailureAfterKafkaAckReliesOnLeaseRecovery() {
         when(publisher.publish(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(store.published(claim)).thenThrow(new IllegalStateException("database down"));
-        assertDoesNotThrow(relay::dispatch);
+        assertRecoveryLogged(relay::dispatch);
         verify(telemetry).relayOutcome(Observation.NOOP, "database_failure");
         verify(store, never()).retry(any(), any(), any());
     }
@@ -104,11 +104,43 @@ class ProposalOutboxRecoveryTests {
     void databaseFailureWhileSchedulingRetryReliesOnLeaseRecovery() {
         when(publisher.publish(any())).thenReturn(CompletableFuture.failedFuture(new IllegalStateException()));
         when(store.retry(any(), any(), any())).thenThrow(new IllegalStateException("database down"));
-        assertDoesNotThrow(relay::dispatch);
+        assertRecoveryLogged(relay::dispatch);
         verify(telemetry).relayOutcome(Observation.NOOP, "database_failure");
         verify(store, never()).published(any());
     }
 
+    @Test
+    void nestedCompletionFailurePersistsItsRootCauseForRetryDiagnostics() {
+        var nested = new CompletionException(new CompletionException(new IllegalStateException("unavailable")));
+        when(publisher.publish(any())).thenReturn(CompletableFuture.failedFuture(nested));
+        when(store.retry(eq(claim), any(), eq("IllegalStateException"))).thenReturn(true);
+        relay.dispatch();
+        verify(store).retry(eq(claim), any(), eq("IllegalStateException"));
+        verify(store, never()).published(any());
+    }
+
+    private void assertRecoveryLogged(Runnable dispatch) {
+        var logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ProposalOutboxDispatcher.class);
+        var appender = new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+        appender.setContext(logger.getLoggerContext());
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            assertDoesNotThrow(dispatch::run);
+            var recovery = appender.list.stream().filter(entry -> entry.getFormattedMessage()
+                    .equals("Outbox state update failed; lease expiry will recover the same event")).toList();
+            assertEquals(1, recovery.size());
+            assertEquals(ch.qos.logback.classic.Level.ERROR, recovery.getFirst().getLevel());
+            var fields = recovery.getFirst().getKeyValuePairs().stream().collect(
+                    java.util.stream.Collectors.toMap(pair -> pair.key, pair -> pair.value));
+            assertEquals(claim.proposal().eventId(), fields.get("eventId"));
+            assertEquals(claim.attempts(), fields.get("attempt"));
+            assertEquals("IllegalStateException", fields.get("failureType"));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+    }
     @Test
     void relayAlwaysClosesItsObservationAfterDispatch() {
         var observation = mock(Observation.class);

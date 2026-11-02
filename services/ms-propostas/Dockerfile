@@ -5,6 +5,7 @@ ARG JAVA_IMAGE=eclipse-temurin:27-jre
 FROM ${BUILD_IMAGE} AS build
 WORKDIR /workspace
 COPY pom.xml ./
+COPY config/checkstyle config/checkstyle
 COPY libraries/event-contracts/pom.xml libraries/event-contracts/pom.xml
 COPY services/ms-propostas/pom.xml services/ms-propostas/pom.xml
 COPY services/ms-cadastro/pom.xml services/ms-cadastro/pom.xml

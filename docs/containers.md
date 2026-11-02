@@ -24,10 +24,10 @@ Execute na raiz:
 ~~~powershell
 docker build -f services/ms-propostas/Dockerfile -t insurance/ms-propostas:datadog-aot .
 docker build -f services/ms-cadastro/Dockerfile -t insurance/ms-cadastro:datadog-aot .
-docker build -f services/ms-analise/Dockerfile -t insurance/ms-analise:datadog-aot services/ms-analise
-docker build -f services/ms-contratos/Dockerfile -t insurance/ms-contratos:datadog-aot services/ms-contratos
-docker build -f services/ms-endossos/Dockerfile -t insurance/ms-endossos:datadog-aot services/ms-endossos
-docker build -f services/ms-pagamentos/Dockerfile -t insurance/ms-pagamentos:datadog-aot services/ms-pagamentos
+docker build -f services/ms-analise/Dockerfile -t insurance/ms-analise:datadog-aot .
+docker build -f services/ms-contratos/Dockerfile -t insurance/ms-contratos:datadog-aot .
+docker build -f services/ms-endossos/Dockerfile -t insurance/ms-endossos:datadog-aot .
+docker build -f services/ms-pagamentos/Dockerfile -t insurance/ms-pagamentos:datadog-aot .
 ~~~
 
 Para construir/iniciar todos com o Agent central, use o

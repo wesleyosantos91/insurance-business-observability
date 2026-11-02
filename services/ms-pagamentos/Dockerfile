@@ -3,11 +3,12 @@ ARG BUILD_IMAGE=maven:3.10.0-eclipse-temurin-27
 ARG JAVA_IMAGE=eclipse-temurin:27-jre
 
 FROM ${BUILD_IMAGE} AS build
-WORKDIR /workspace
-COPY pom.xml ./
+WORKDIR /workspace/services/ms-pagamentos
+COPY services/ms-pagamentos/pom.xml ./
+COPY config/checkstyle /workspace/config/checkstyle
 RUN --mount=type=cache,id=insurance-maven,target=/root/.m2 \
     mvn -B -ntp -Paot dependency:go-offline
-COPY src ./src
+COPY services/ms-pagamentos/src ./src
 RUN --mount=type=cache,id=insurance-maven,target=/root/.m2 \
     mvn -B -ntp -Paot clean verify
 RUN cp target/ms-pagamentos-*.jar application.jar \
