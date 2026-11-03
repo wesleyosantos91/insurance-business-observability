@@ -10,6 +10,8 @@ Funcionalidade: Observabilidade da jornada de propostas com OTLP
     Então registro, relay e cadastro exportam spans do mesmo trace
     E Kafka e Outbox preservam o contexto W3C
     E os logs JSON correlacionam o trace e os identificadores de negócio
+    Quando reenvio duas cópias do mesmo evento Avro
+    Então as cópias são confirmadas sem duplicar o recebimento
     E as métricas OTLP possuem dimensões limitadas sem IDs de negócio
 
   Cenário: Falha de telemetria não impede a entrega de negócio

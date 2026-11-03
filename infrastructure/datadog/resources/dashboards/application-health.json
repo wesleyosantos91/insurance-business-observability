@@ -1,0 +1,290 @@
+
+{
+  "title": "Insurance Application Health",
+  "description": "PoC insurance-business-observability | env:local | ms-propostas -> Outbox -> Kafka -> ms-cadastro. Queries use received series; metrics are best effort, not a financial ledger. Owner scope: this PoC only. https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29 https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29",
+  "layout_type": "ordered",
+  "reflow_type": "fixed",
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": [
+        "local"
+      ],
+      "defaults": [
+        "local"
+      ]
+    },
+    {
+      "name": "service",
+      "prefix": "service",
+      "available_values": [
+        "ms-propostas",
+        "ms-cadastro"
+      ],
+      "defaults": [
+        "*"
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Insurance Business Observability — saúde técnica**\n\nSomente séries recebidas. Heartbeat JVM não substitui probe HTTP. Hikari mede pool de conexões, não métricas internas do PostgreSQL. Não foi habilitado DBM, Synthetics ou integração adicional paga.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 3,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Requisições HTTP — todas as rotas",
+        "requests": [
+          {
+            "q": "count:http.server.requests{project:insurance-business-observability,$env,$service} by {service,uri}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Latência HTTP média (ms) — p95/p99 pendentes",
+        "requests": [
+          {
+            "q": "avg:http.server.requests{project:insurance-business-observability,$env,$service} by {service,uri}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "HTTP 5xx — No Data quando não ocorreu",
+        "requests": [
+          {
+            "q": "count:http.server.requests{project:insurance-business-observability,$env,$service,status:5*} by {service,uri}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 6
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Heap utilizado (bytes)",
+        "requests": [
+          {
+            "q": "sum:jvm.memory.used{project:insurance-business-observability,$env,$service,area:heap} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 6
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Pausa média GC (ms)",
+        "requests": [
+          {
+            "q": "avg:jvm.gc.pause{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Threads JVM",
+        "requests": [
+          {
+            "q": "avg:jvm.threads.live{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 9
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Heartbeat / uptime JVM (ms)",
+        "requests": [
+          {
+            "q": "max:process.uptime{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "CPU do processo (fração 0..1)",
+        "requests": [
+          {
+            "q": "avg:process.cpu.usage{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 12
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Kafka records lag — posição atual, não offset commitado",
+        "requests": [
+          {
+            "q": "max:kafka.consumer.fetch.manager.records.lag.max{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 15
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Kafka taxa de erros do producer",
+        "requests": [
+          {
+            "q": "sum:kafka.producer.record.error.rate{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 15
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Hikari conexões ativas",
+        "requests": [
+          {
+            "q": "sum:hikaricp.connections.active{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Hikari conexões pendentes",
+        "requests": [
+          {
+            "q": "sum:hikaricp.connections.pending{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 18
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "[Logs Explorer](https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29) | [APM](https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29)\n\nFiltre por business_id nos logs e businessId nos spans. IDs não são tags de métricas.\n\nSem baseline/SLO aprovado. Taxa HTTP de erro deve comparar 5xx ao total da mesma rota/janela; nenhum zero foi preenchido artificialmente. Ainda não há métricas internas broker/PostgreSQL coletadas por integrações do Agent.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 3,
+        "x": 0,
+        "y": 21
+      }
+    }
+  ]
+}

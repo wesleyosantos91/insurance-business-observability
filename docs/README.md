@@ -40,3 +40,20 @@ priorize o README principal, os ADRs e os documentos de idempotência/Datadog.
 - [Revisão dos apontamentos Sonar](sonar-findings-review.md)
 
 - [Cobertura completa por serviço e regressão](full-coverage-validation.md).
+
+- [Contrato de telemetria de negócio](observability/business-telemetry-contract.md).
+- [Integração Datadog e operação](observability/datadog-integration.md).
+- [Validação do complemento da Etapa 9](observability/stage9-validation.md).
+
+## Operação Datadog — Etapa 10
+
+- [Logs e correlação](observability/datadog-log-management.md).
+- [Dashboards](observability/datadog-dashboards.md).
+- [Monitores provisórios](observability/datadog-monitors.md).
+- [Incidentes e deduplicação](observability/datadog-incidents.md).
+- [Evidências SaaS e pendências](observability/stage10-validation.md).
+
+- [Instalação manual Datadog, sem MCP](observability/datadog-manual-installation.md).
+
+- [Single Pane of Glass e quatro sinais de ouro](observability/single-pane-of-glass.md).
+- [Acesso para automação MCP/API](observability/datadog-automation-access.md).

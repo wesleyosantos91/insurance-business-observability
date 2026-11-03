@@ -1,3 +1,5 @@
+> Contrato canônico atual: [métricas e correlação](observability/business-telemetry-contract.md); [operação](observability/datadog-integration.md).
+
 # Observabilidade da primeira jornada
 
 ## Arquitetura
@@ -42,19 +44,19 @@ Repetir a intenção HTTP pode produzir outro trace de request; a Outbox mantém
 
 | Nome OTLP | Tipo | Dimensões customizadas | Interpretação |
 |---|---|---|---|
-| insurance.proposal.registrations | Counter | outcome=created/replayed | Registro HTTP confirmado no PostgreSQL; não é quantidade de HTTP 202 |
-| insurance.proposal.register | Timer/Observation | journeyType, outcome, error | Tempo de registro, incluindo commit |
+| insurance.proposal.registrations | Counter diagnóstico | outcome=created/replayed/rejected/technical_failure | Resultado do registro; criações/replays após commit, falhas/rejeições após rollback; não é quantidade de HTTP 202 |
+| insurance.business.step.duration | Timer/Observation, step=proposal_register | journey_type, outcome, error_code | Tempo de registro, incluindo commit |
 | insurance.outbox.dispatches | Counter | outcome=published/retry/claim_lost/database_failure | Transições observadas pelo relay |
-| insurance.outbox.publish | Timer/Observation | journeyType, eventType, outcome, error | Envio e confirmação da tentativa |
+| insurance.outbox.publish.duration | Timer/Observation | journey_type, outcome, error_code | Envio e confirmação da tentativa |
 | insurance.outbox.pending | Gauge | Identidade técnica do serviço | Pendências globais do banco |
 | insurance.outbox.oldest.age | Gauge, segundos | Identidade técnica do serviço | Idade da pendência mais antiga |
 | insurance.outbox.snapshot.available | Gauge | Identidade técnica do serviço | 1=consulta disponível; 0=indisponível |
 | insurance.proposal.receipts | Counter | outcome=new/duplicate | Efeito novo ou deduplicado após commit Inbox |
-| insurance.proposal.consume | Timer/Observation | journeyType, eventType, outcome, error | Validação, processamento e ACK |
+| insurance.business.step.duration | Timer/Observation, step=proposal_receive | journey_type, outcome, error_code | Validação, processamento e ACK |
 | insurance.proposal.consume.failures | Counter | stage=validation/processing/acknowledgment | Falha antes da conclusão do listener |
 | insurance.proposal.delivery.latency | Timer | Identidade técnica do serviço | occurredAt até commit do primeiro recebimento |
 
-Timers exportam a unidade configurada pelo registry OTLP (padrão Micrometer: milissegundos).
+Timers exportam a unidade configurada pelo registry OTLP; a captura atual comprovou milliseconds.
 oldest.age possui unidade explícita segundos. Histogramas são habilitados para tempos HTTP e da jornada.
 O Agent configura distribuição a partir dos histogramas; confirme nomes/unidades finais no Metrics Explorer.
 
@@ -72,7 +74,7 @@ Regras:
 
 ## Investigar uma proposta no Datadog
 
-1. Em Logs Explorer, filtre service:ms-propostas e @proposalId:<id>.
+1. Em Logs Explorer, filtre service:ms-propostas e @proposal_id:<id>.
 2. Use journeyId, rootJourneyId, correlationId e eventId para acompanhar as etapas.
 3. Abra o trace a partir de trace_id/span_id presentes no JSON.
 4. No APM, procure os spans insurance.proposal.register, insurance.outbox.publish e insurance.proposal.consume.

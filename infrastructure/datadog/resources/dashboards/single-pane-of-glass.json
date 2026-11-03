@@ -1,0 +1,571 @@
+{
+  "title": "Insurance Single Pane of Glass",
+  "description": "PoC insurance-business-observability | SPG principal para quatro golden signals: traffic, latency, errors, saturation. Jornada ms-propostas -> Outbox -> Kafka -> ms-cadastro. Apenas métricas recebidas, médias explicitadas, sem SLO aprovado ou zero artificial. [Application Health](https://us5.datadoghq.com/dashboard/iua-v7j-i8a) | [Business Overview](https://us5.datadoghq.com/dashboard/63s-vgf-ghp) | [Journey Health](https://us5.datadoghq.com/dashboard/r6i-rea-k8h)",
+  "layout_type": "ordered",
+  "reflow_type": "fixed",
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": [
+        "local"
+      ],
+      "defaults": [
+        "local"
+      ]
+    },
+    {
+      "name": "service",
+      "prefix": "service",
+      "available_values": [
+        "ms-propostas",
+        "ms-cadastro"
+      ],
+      "defaults": [
+        "*"
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Insurance Business Observability — Single Pane of Glass**\n\nEntrada única para a jornada ms-propostas → Outbox → Kafka → ms-cadastro. Quatro sinais de ouro + negócio + investigação. Filtros env/service se aplicam às métricas. [Application Health](https://us5.datadoghq.com/dashboard/iua-v7j-i8a) | [Business Overview](https://us5.datadoghq.com/dashboard/63s-vgf-ghp) | [Journey Health](https://us5.datadoghq.com/dashboard/r6i-rea-k8h)",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 3,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "TRÁFEGO — execuções registro/Inbox por segundo",
+        "requests": [
+          {
+            "q": "count:insurance.business.step.duration{project:insurance-business-observability,$env,$service}.as_rate()",
+            "aggregator": "avg"
+          }
+        ],
+        "autoscale": true,
+        "precision": 2,
+        "custom_unit": "operation / second"
+      },
+      "layout": {
+        "width": 3,
+        "height": 3,
+        "x": 0,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "LATÊNCIA — POST /proposals 2xx, média ms",
+        "requests": [
+          {
+            "q": "avg:http.server.requests{project:insurance-business-observability,$env,$service,uri:/proposals,method:post,status:2*}",
+            "aggregator": "avg"
+          }
+        ],
+        "autoscale": true,
+        "precision": 2,
+        "custom_unit": "millisecond"
+      },
+      "layout": {
+        "width": 3,
+        "height": 3,
+        "x": 3,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "ERROS — falhas técnicas registro/Inbox",
+        "requests": [
+          {
+            "q": "count:insurance.business.step.duration{project:insurance-business-observability,$env,$service,outcome:technical_failure}.as_count()",
+            "aggregator": "sum"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "width": 3,
+        "height": 3,
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "SATURAÇÃO — conexões JDBC ocupadas (%)",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "active",
+                "query": "sum:hikaricp.connections.active{project:insurance-business-observability,$env,$service}",
+                "aggregator": "avg"
+              },
+              {
+                "data_source": "metrics",
+                "name": "capacity",
+                "query": "sum:hikaricp.connections.max{project:insurance-business-observability,$env,$service}",
+                "aggregator": "avg"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "100 * active / capacity"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 2,
+        "custom_unit": "percent"
+      },
+      "layout": {
+        "width": 3,
+        "height": 3,
+        "x": 9,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Os quatro sinais de ouro**\n\nTráfego mede trabalho técnico, incluindo replay/reentrega; não é quantidade de propostas. Latência é média, separando sucesso/falha nos gráficos; p95/p99 seguem pendentes. Erros HTTP/etapa sem ocorrências podem mostrar No Data. Saturação usa recursos existentes; sem SLO/limiar aprovado.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 2,
+        "x": 0,
+        "y": 6
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "1. Tráfego — HTTP POST /proposals (req/s)",
+        "requests": [
+          {
+            "q": "count:http.server.requests{project:insurance-business-observability,$env,$service,uri:/proposals,method:post} by {service}.as_rate()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "1. Tráfego — execuções registro/Inbox (ops/s)",
+        "requests": [
+          {
+            "q": "count:insurance.business.step.duration{project:insurance-business-observability,$env,$service} by {service,step}.as_rate()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 8
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "2. Latência HTTP — sucesso 2xx e falha 5xx, médias ms",
+        "requests": [
+          {
+            "q": "avg:http.server.requests{project:insurance-business-observability,$env,$service,uri:/proposals,method:post,status:2*} by {service,status}",
+            "display_type": "line"
+          },
+          {
+            "q": "avg:http.server.requests{project:insurance-business-observability,$env,$service,uri:/proposals,method:post,status:5*} by {service,status}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 11
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "2. Latência — registro, Outbox e Inbox por resultado, médias ms",
+        "requests": [
+          {
+            "q": "avg:insurance.business.step.duration{project:insurance-business-observability,$env,$service} by {service,step,outcome}",
+            "display_type": "line"
+          },
+          {
+            "q": "avg:insurance.outbox.publish.duration{project:insurance-business-observability,$env,$service} by {service,step,outcome}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 11
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "3. Erros HTTP — 5xx / respostas POST (%)",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "failed",
+                "query": "count:http.server.requests{project:insurance-business-observability,$env,$service,uri:/proposals,method:post,status:5*} by {service}.as_count()"
+              },
+              {
+                "data_source": "metrics",
+                "name": "total",
+                "query": "count:http.server.requests{project:insurance-business-observability,$env,$service,uri:/proposals,method:post} by {service}.as_count()"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "100 * failed / total"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 14
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "3. Erros técnicos — registro, Inbox e Outbox por causa",
+        "requests": [
+          {
+            "q": "count:insurance.business.step.duration{project:insurance-business-observability,$env,$service,outcome:technical_failure} by {service,step,error_code}.as_count()",
+            "display_type": "line"
+          },
+          {
+            "q": "count:insurance.outbox.publish.duration{project:insurance-business-observability,$env,$service,outcome:retry} by {service,step,error_code}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 14
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "4. Saturação — Hikari active / max por serviço (%)",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "active",
+                "query": "sum:hikaricp.connections.active{project:insurance-business-observability,$env,$service} by {service}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "capacity",
+                "query": "sum:hikaricp.connections.max{project:insurance-business-observability,$env,$service} by {service}"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "100 * active / capacity"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 17
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "4. Saturação — espera por conexão JDBC",
+        "requests": [
+          {
+            "q": "sum:hikaricp.connections.pending{project:insurance-business-observability,$env,$service} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 17
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "4. Saturação — CPU do processo (%)",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "cpu",
+                "query": "avg:process.cpu.usage{project:insurance-business-observability,$env,$service} by {service}"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "100 * cpu"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 20
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "4. Saturação — heap usado e comprometido (bytes)",
+        "requests": [
+          {
+            "q": "sum:jvm.memory.used{project:insurance-business-observability,$env,$service,area:heap} by {service}",
+            "display_type": "line"
+          },
+          {
+            "q": "sum:jvm.memory.committed{project:insurance-business-observability,$env,$service,area:heap} by {service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 20
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Negócio e entrega confiável**\n\nProposta nova e recebimento no cadastro são marcos da mesma jornada; não some os dois como propostas adicionais. Backlog/idade são snapshots do banco: usar máximo entre réplicas e conferir snapshot.available. Heap comprometido não é limite Xmx; CPU é sinal de uso, não prova isolada de saturação.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 2,
+        "x": 0,
+        "y": 23
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Propostas novas registradas",
+        "requests": [
+          {
+            "q": "sum:insurance.business.transitions{project:insurance-business-observability,$env,$service,step:proposal_register}.as_count()",
+            "aggregator": "sum"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "width": 3,
+        "height": 3,
+        "x": 0,
+        "y": 25
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Propostas novas processadas no cadastro",
+        "requests": [
+          {
+            "q": "sum:insurance.business.transitions{project:insurance-business-observability,$env,$service,step:proposal_receive}.as_count()",
+            "aggregator": "sum"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "width": 3,
+        "height": 3,
+        "x": 3,
+        "y": 25
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Outbox — pendentes atuais",
+        "requests": [
+          {
+            "q": "max:insurance.outbox.pending{project:insurance-business-observability,$env,$service}",
+            "aggregator": "last"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "width": 3,
+        "height": 3,
+        "x": 6,
+        "y": 25
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Outbox — maior idade pendente (s)",
+        "requests": [
+          {
+            "q": "max:insurance.outbox.oldest.age{project:insurance-business-observability,$env,$service}",
+            "aggregator": "last"
+          }
+        ],
+        "autoscale": true,
+        "precision": 2,
+        "custom_unit": "second"
+      },
+      "layout": {
+        "width": 3,
+        "height": 3,
+        "x": 9,
+        "y": 25
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Entrega — tentativas, retries e duplicatas técnicas",
+        "requests": [
+          {
+            "q": "sum:insurance.outbox.publish.attempts{project:insurance-business-observability,$env,$service}.as_count()",
+            "display_type": "line"
+          },
+          {
+            "q": "sum:insurance.outbox.dispatches{project:insurance-business-observability,$env,$service,outcome:retry}.as_count()",
+            "display_type": "line"
+          },
+          {
+            "q": "sum:insurance.inbox.duplicates{project:insurance-business-observability,$env,$service}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 28
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Snapshot Outbox válido (1) / inválido (0)",
+        "requests": [
+          {
+            "q": "min:insurance.outbox.snapshot.available{project:insurance-business-observability,$env,$service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 28
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Investigar e agir**\n\n[Logs Explorer](https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29) | [APM](https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29) | [Monitores](https://us5.datadoghq.com/monitors/manage)\n\nBuscar proposalId em @business_id nos logs e @businessId nos spans; usar trace_id reservado após a pipeline. Os dez monitores permanecem Draft/P5: não é prova de alertas ativos. Não há incidente automático.\n\nSem série de erro/denominador, o gráfico de taxa mostra No Data; não foi preenchido com zero. Com filtro service=ms-cadastro, os gráficos HTTP /proposals ficam sem dados porque sua entrada de negócio é Kafka. Métricas são best effort, sem ledger/exactly-once. Nenhuma métrica nova, percentil pago ou SLO foi habilitado.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 4,
+        "x": 0,
+        "y": 31
+      }
+    }
+  ]
+}

@@ -66,10 +66,13 @@ public class ProposalStore {
                     .addKeyValue("journeyId", proposal.journeyId()).addKeyValue("rootJourneyId", proposal.journeyId())
                     .addKeyValue("correlationId", proposal.correlationId())
                     .addKeyValue("eventType", "ProposalCreated").addKeyValue("created", result.created())
+                    .addKeyValue("businessId", proposal.proposalId())
+                    .addKeyValue("product_key", proposal.productKey()).addKeyValue("journey_type", "PROPOSAL").addKeyValue("step", "proposal_register")
+                    .addKeyValue("outcome", result.created() ? "success" : "replay").addKeyValue("error_code", "none")
                     .log("Proposal intent durably registered");
             return proposal;
         } catch (RuntimeException failure) {
-            observation.error(failure).lowCardinalityKeyValue("outcome", "error");
+            telemetry.registrationFailed(observation, failure);
             throw failure;
         } finally {
             observation.stop();

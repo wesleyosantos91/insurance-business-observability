@@ -56,3 +56,6 @@ O build Docker deve usar a raiz do repositório como contexto para copiar essa c
 
 A feature proposal exige 100% de mutation score no profile mutation e no Quality Gate Sonar.
 Execute mvn -Pmutation verify para validar a meta localmente; as coberturas de linhas e branches exigem 100%.
+
+[Telemetria de negócio canônica](../../docs/observability/business-telemetry-contract.md):
+transições somente após Inbox nova confirmada; duplicatas têm contador próprio. [Operação Datadog](../../docs/observability/datadog-integration.md).

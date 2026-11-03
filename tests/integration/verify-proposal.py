@@ -11,7 +11,7 @@ import uuid
 
 import avro.io
 import avro.schema
-from confluent_kafka import Consumer, KafkaError
+from confluent_kafka import Consumer, KafkaError, Producer
 
 TOPIC = "insurance.proposals.events.v1"
 FULL_NAME = "io.github.wesleyosantos91.insurance.events.proposals.v1.ProposalCreated"
@@ -27,6 +27,8 @@ def main():
     parser = argparse.ArgumentParser()
     for name in ("proposal-id", "journey-id", "correlation-id"):
         parser.add_argument("--" + name, required=True)
+    parser.add_argument("--trace-id", help="Expected original W3C trace ID for this synthetic journey")
+    parser.add_argument("--redeliver", action="store_true", help="Redeliver only this validated synthetic event to verify Inbox deduplication")
     args = parser.parse_args()
     registry = os.environ["SCHEMA_REGISTRY_URL"].rstrip("/")
     encoded_subject = urllib.parse.quote(SUBJECT, safe="")
@@ -73,13 +75,29 @@ def main():
             assert metadata["parentJourneyId"] is None
             assert metadata["causationId"] is None
             assert versions == get_json(registry, f"/subjects/{encoded_subject}/versions")
+            traceparent = dict(record.headers() or []).get("traceparent")
+            traceparent = traceparent.decode() if traceparent else None
+            if args.trace_id:
+                assert traceparent and traceparent.split("-")[1] == args.trace_id, "W3C trace context changed"
+            redelivery = None
+            if args.redeliver:
+                producer = Producer({"bootstrap.servers": os.environ["KAFKA_BOOTSTRAP_SERVERS"],
+                                     "acks": "all", "enable.idempotence": True})
+                acknowledgments = []
+                def confirmed(error, message):
+                    if error:
+                        raise RuntimeError(str(error))
+                    acknowledgments.append({"partition": message.partition(), "offset": message.offset()})
+                producer.produce(TOPIC, key=record.key(), value=wire, partition=record.partition(), headers=record.headers(), on_delivery=confirmed)
+                assert producer.flush(15) == 0 and len(acknowledgments) == 1
+                redelivery = acknowledgments[0]
             print(json.dumps({
                 "result": "AVRO_CONFIRMED", "topic": TOPIC,
                 "partition": record.partition(), "offset": record.offset(),
                 "key": record.key().decode(), "schemaId": schema_id,
                 "registryVersion": latest["version"], "subject": SUBJECT,
                 "compatibility": "BACKWARD_TRANSITIVE", **metadata,
-                "proposalId": args.proposal_id,
+                "proposalId": args.proposal_id, "traceparent": traceparent, "redelivery": redelivery,
             }))
             return
         raise TimeoutError("Proposal was not found in real Kafka within 45 seconds")

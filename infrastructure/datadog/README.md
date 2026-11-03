@@ -112,3 +112,13 @@ down preserva os volumes de Kafka e bancos.
 Documentação oficial: [Agent OTLP](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest_in_the_agent/),
 [Spring Boot tracing](https://docs.spring.io/spring-boot/reference/actuator/tracing.html),
 [logs/traces OTel](https://docs.datadoghq.com/tracing/other_telemetry/connect_logs_and_traces/opentelemetry/).
+
+Contrato atual: [métricas, logs e spans](../../docs/observability/business-telemetry-contract.md).
+[Operação e investigação individual](../../docs/observability/datadog-integration.md).
+
+## Operação SaaS — Etapa 10
+
+Ingestão real US5 comprovada; consulte [evidências](../../docs/observability/stage10-validation.md).
+Nesta máquina o .env ignorado usa PROPOSTAS_PORT=18081 por bloqueio Windows na porta 8081.
+A coleta dos dois serviços inclui redação de atributos JSON sensíveis nas labels, sem sidecar.
+[Recursos declarativos e aplicação](resources/README.md): recursos criados via MCP após liberação da escrita, com IDs/URLs no manifesto. Monitores permanecem Draft/P5.

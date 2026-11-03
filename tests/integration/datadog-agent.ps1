@@ -40,6 +40,9 @@ if ($Otlp) {
         }
     }
     if (-not $sampleLog.trace_id) { throw 'No real correlated business log found in BDD evidence' }
+    $sampleLog.authorization = 'Bearer synthetic-agent-test-only'
+    $sampleLog.password = 'synthetic-quoted-"value'
+    $sampleLog.cpf = '000.000.000-00'
     $sampleLog | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $PSScriptRoot 'target/observability/sample-log.json') -Encoding utf8NoBOM
 }
 try {
@@ -86,8 +89,12 @@ try {
             if ($statusCode -notcontains '200') { throw "Agent rejected OTLP $signal : $statusCode" }
         }
         $code = "import json,time; data=json.load(open('/tests/target/observability/sample-log.json')); exec('for i in range(60):\n print(json.dumps(data),flush=True)\n time.sleep(2)')"
+        $composeJson = & docker compose -f (Join-Path $repo 'infrastructure/datadog/compose.yaml') config --format json --no-env-resolution
+        if ($LASTEXITCODE -ne 0) { throw 'Could not read scoped log collection configuration' }
+        # Compose config escapes dollars for a reusable Compose document; docker run needs the literal replacement.
+        $sourceConfiguration = ($composeJson | ConvertFrom-Json -AsHashtable).services.'ms-propostas'.labels.'com.datadoghq.ad.logs'.Replace('$$', '$')
         Invoke-Docker @('run','-d','--name',$logSource,'--network',$network,'--memory','64m',
-            '--label','com.datadoghq.ad.logs=[{"source":"java","service":"ms-propostas"}]',
+            '--label',("com.datadoghq.ad.logs=" + $sourceConfiguration),
             '--mount',("type=bind,source={0},target=/tests,readonly" -f $PSScriptRoot),
             'python:3.13.9-slim-bookworm','python','-u','-c',$code) | Out-Host
         $sourceCreated = $true
@@ -112,6 +119,9 @@ try {
         if (-not ($received.http_requests.PSObject.Properties.Name -like '*traces*')) { throw 'No OTLP traces forwarded by Agent' }
         if ($received.logMessages.Count -eq 0) { throw 'No structured Docker log forwarded by Agent' }
         if ($received.logMessages[0].trace_id -ne $sampleLog.trace_id) { throw 'Log trace context changed' }
+        foreach ($field in @('authorization','password','cpf')) {
+            if ($received.logMessages[0].$field -ne '[REDACTED]') { throw "Sensitive attribute was not masked: $field" }
+        }
     }
     Write-Host "PASS Agent 7.85.0: healthy, DogStatsD, OTLP=$Otlp, selective logs=$Otlp, local forwarding. No SaaS traffic. Evidence: $EvidenceDirectory"
 } finally {

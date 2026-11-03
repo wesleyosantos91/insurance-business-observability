@@ -59,9 +59,8 @@ management:
     distribution:
       percentiles-histogram:
         "[http.server.requests]": true
-        "[insurance.proposal.register]": true
-        "[insurance.outbox.publish]": true
-        "[insurance.proposal.consume]": true
+        "[insurance.business.step.duration]": true
+        "[insurance.outbox.publish.duration]": true
         "[insurance.proposal.delivery.latency]": true
     tags:
       service: ${DD_SERVICE:${spring.application.name}}
@@ -112,7 +111,14 @@ logging:
       rename:
         traceId: trace_id
         spanId: span_id
+        journeyId: journey_id
+        rootJourneyId: root_journey_id
+        proposalId: proposal_id
+        businessId: business_id
+        eventId: event_id
+        correlationId: correlation_id
       add:
         service: ${DD_SERVICE:${spring.application.name}}
         env: ${DD_ENV:local}
+        environment: ${DD_ENV:local}
         version: ${DD_VERSION:0.0.1-SNAPSHOT}

@@ -408,6 +408,9 @@ public class IdempotencySteps {
                     assertEquals(name.endsWith("consume") ? "ms-cadastro" : "ms-propostas", point.service());
                     assertFalse(OtlpCapture.attribute(point.span().getAttributesList(), "eventId").isBlank());
                     assertFalse(OtlpCapture.attribute(point.span().getAttributesList(), "journeyId").isBlank());
+                    assertEquals(id, OtlpCapture.attribute(point.span().getAttributesList(), "businessId"));
+                    assertFalse(OtlpCapture.attribute(point.span().getAttributesList(), "stepKey").isBlank());
+                    assertFalse(OtlpCapture.attribute(point.span().getAttributesList(), "status").isBlank());
                 }
             }
         });
@@ -444,14 +447,22 @@ public class IdempotencySteps {
                         try { return JSON.readTree(line); }
                         catch (Exception failure) { throw new IllegalStateException(failure); }
                     })
-                    .filter(line -> line.path("proposalId").asText().equals(id)
+                    .filter(line -> line.path("proposal_id").asText().equals(id)
                             && line.path("trace_id").asText().equals(expectedTraceId))
                     .toList();
             assertFalse(matching.isEmpty(), "Missing correlated JSON log");
-            assertTrue(matching.stream().anyMatch(line -> !line.path("journeyId").asText().isBlank()
-                    && !line.path("eventId").asText().isBlank()
-                    && !line.path("correlationId").asText().isBlank()
-                    && !line.path("span_id").asText().isBlank()));
+            assertTrue(matching.stream().anyMatch(line -> !line.path("journey_id").asText().isBlank()
+                    && !line.path("event_id").asText().isBlank()
+                    && !line.path("correlation_id").asText().isBlank()
+                    && line.path("span_id").asText().matches("[0-9a-f]{16}")
+                    && line.path("business_id").asText().equals(id)
+                    && line.path("product_key").asText().equals("AUTO")
+                    && line.path("journey_type").asText().equals("PROPOSAL")
+                    && !line.path("step").asText().isBlank()
+                    && !line.path("outcome").asText().isBlank()
+                    && line.path("error_code").asText().equals("none")
+                    && !line.path("environment").asText().isBlank()
+                    && !line.path("service").asText().isBlank()));
         }
     }
 
@@ -459,11 +470,13 @@ public class IdempotencySteps {
     public void boundedMetricDimensions() {
         await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
             for (var name : List.of("insurance.proposal.registrations", "insurance.outbox.dispatches",
-                    "insurance.outbox.pending", "insurance.proposal.receipts", "insurance.proposal.delivery.latency")) {
+                    "insurance.outbox.pending", "insurance.proposal.receipts", "insurance.proposal.delivery.latency",
+                    "insurance.business.transitions", "insurance.business.step.duration",
+                    "insurance.outbox.publish.attempts", "insurance.outbox.publish.duration", "insurance.inbox.duplicates")) {
                 assertTrue(telemetry.metrics().anyMatch(point -> point.metric().getName().equals(name)), name);
             }
         });
-        var forbidden = java.util.Set.of("eventid", "proposalid", "journeyid", "rootjourneyid",
+        var forbidden = java.util.Set.of("businessid", "eventid", "proposalid", "journeyid", "rootjourneyid",
                 "correlationid", "parentjourneyid", "causationid", "traceid", "spanid", "productkey", "idempotencykey");
         telemetry.metrics().forEach(point -> {
             assertTrue(List.of("ms-propostas", "ms-cadastro").contains(point.service()), point.service());

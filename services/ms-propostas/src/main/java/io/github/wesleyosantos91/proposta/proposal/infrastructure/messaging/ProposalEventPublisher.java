@@ -32,6 +32,9 @@ public class ProposalEventPublisher {
                         var metadata = event.getMetadata();
                         var record = result.getRecordMetadata();
                         LOG.atInfo()
+                                .addKeyValue("businessId", event.getPayload().getProposalId())
+                    .addKeyValue("product_key", metadata.getProductKey()).addKeyValue("journey_type", "PROPOSAL").addKeyValue("step", "outbox_publish")
+                                .addKeyValue("outcome", "success").addKeyValue("error_code", "none")
                                 .addKeyValue("eventType", metadata.getEventType())
                                 .addKeyValue("eventId", metadata.getEventId())
                                 .addKeyValue("proposalId", event.getPayload().getProposalId())

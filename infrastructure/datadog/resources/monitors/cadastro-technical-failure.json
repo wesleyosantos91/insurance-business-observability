@@ -1,0 +1,24 @@
+{
+  "name": "Insurance | local | Falha técnica no consumo/Inbox",
+  "type": "query alert",
+  "query": "sum(last_5m):count:insurance.business.step.duration{project:insurance-business-observability,env:local,service:ms-cadastro,step:proposal_receive,outcome:technical_failure} by {env,service,step,error_code}.as_count() > 0",
+  "message": "**PoC insurance-business-observability. Limiar PROVISÓRIO; não é SLO aprovado.**\n\nFalhas de validação, processamento ou ACK permanecem observáveis e não são descartadas. Não repor evento com novo eventId. Consultar Inbox e logs antes de agir.\n\nAgrupar causas por env + service + step + error_code normalizado. Investigar IDs individuais nos logs, nunca como grupos de alerta.\n\n[Logs Explorer](https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29) | [APM](https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29)\n\nFiltre por business_id nos logs e businessId nos spans. IDs não são tags de métricas.\n\nSem destinatários, abertura automática de incidente ou encerramento por ausência de dados. Revisar baseline e publicar manualmente após aprovação operacional.",
+  "tags": [
+    "project:insurance-business-observability",
+    "env:local",
+    "threshold_status:provisional"
+  ],
+  "priority": 5,
+  "draft_status": "draft",
+  "options": {
+    "thresholds": {
+      "critical": 0
+    },
+    "require_full_window": false,
+    "notify_no_data": false,
+    "include_tags": true,
+    "notify_audit": false,
+    "renotify_interval": 0,
+    "evaluation_delay": 30
+  }
+}

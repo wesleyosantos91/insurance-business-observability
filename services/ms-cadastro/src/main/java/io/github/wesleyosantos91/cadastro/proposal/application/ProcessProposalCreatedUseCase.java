@@ -35,6 +35,10 @@ public class ProcessProposalCreatedUseCase {
             }
             LOG.atInfo()
                     .addKeyValue("eventId", proposal.eventId()).addKeyValue("proposalId", proposal.proposalId())
+                    .addKeyValue("businessId", proposal.proposalId())
+                    .addKeyValue("product_key", proposal.productKey()).addKeyValue("journey_type", "PROPOSAL").addKeyValue("journeyId", proposal.journeyId())
+                    .addKeyValue("rootJourneyId", proposal.rootJourneyId()).addKeyValue("correlationId", proposal.correlationId())
+                    .addKeyValue("step", "proposal_receive").addKeyValue("outcome", "duplicate").addKeyValue("error_code", "none")
                     .log("Duplicate ProposalCreated already processed");
             return false;
         }

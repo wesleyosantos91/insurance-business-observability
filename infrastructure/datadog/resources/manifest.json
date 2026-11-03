@@ -1,0 +1,311 @@
+{
+  "project": "insurance-business-observability",
+  "site": "us5.datadoghq.com",
+  "organization_id": "1300091553",
+  "organization_name": null,
+  "environment": "local",
+  "validated_on": "2026-11-02",
+  "host": "insurance-observability-local",
+  "ingestion": {
+    "logs": "confirmed",
+    "traces": "confirmed",
+    "five_business_metrics": "confirmed",
+    "reserved_trace_log_correlation": "confirmed_after_pipeline",
+    "custom_trace_log_search": "promoted_to_reserved_attribute_by_pipeline"
+  },
+  "write_capability": {
+    "status": "enabled_and_creation_confirmed",
+    "attempted_tool": "upsert_datadog_log_pipeline",
+    "created_resources": [
+      {
+        "type": "pipeline",
+        "id": "XTUDCxKWQ9mYE_IztTNyAw",
+        "name": "Insurance Business Observability"
+      },
+      {
+        "type": "dashboard",
+        "id": "iua-v7j-i8a",
+        "name": "Insurance Application Health",
+        "url": "https://us5.datadoghq.com/dashboard/iua-v7j-i8a"
+      },
+      {
+        "type": "dashboard",
+        "id": "63s-vgf-ghp",
+        "name": "Insurance Business Overview",
+        "url": "https://us5.datadoghq.com/dashboard/63s-vgf-ghp"
+      },
+      {
+        "type": "dashboard",
+        "id": "r6i-rea-k8h",
+        "name": "Insurance Journey Health",
+        "url": "https://us5.datadoghq.com/dashboard/r6i-rea-k8h"
+      },
+      {
+        "type": "monitor",
+        "id": 23495763,
+        "name": "Insurance | local | Falha técnica no consumo/Inbox",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495763"
+      },
+      {
+        "type": "monitor",
+        "id": 23495764,
+        "name": "Insurance | local | Latência HTTP média elevada",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495764"
+      },
+      {
+        "type": "monitor",
+        "id": 23495765,
+        "name": "Insurance | local | HTTP 5xx recorrente",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495765"
+      },
+      {
+        "type": "monitor",
+        "id": 23495766,
+        "name": "Insurance | local | Duplicações Inbox elevadas",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495766"
+      },
+      {
+        "type": "monitor",
+        "id": 23495767,
+        "name": "Insurance | local | Ausência de heartbeat JVM",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495767"
+      },
+      {
+        "type": "monitor",
+        "id": 23495768,
+        "name": "Insurance | local | Outbox pendente envelhecida",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495768"
+      },
+      {
+        "type": "monitor",
+        "id": 23495769,
+        "name": "Insurance | local | Falhas recorrentes de publicação",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495769"
+      },
+      {
+        "type": "monitor",
+        "id": 23495770,
+        "name": "Insurance | local | Volume de retries Outbox",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495770"
+      },
+      {
+        "type": "monitor",
+        "id": 23495773,
+        "name": "Insurance | local | Snapshot Outbox indisponível",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495773"
+      },
+      {
+        "type": "monitor",
+        "id": 23495774,
+        "name": "Insurance | local | Falha técnica na criação de proposta",
+        "state": "draft",
+        "url": "https://us5.datadoghq.com/monitors/23495774"
+      },
+      {
+        "type": "dashboard",
+        "id": "kmk-jar-atc",
+        "name": "Insurance Single Pane of Glass",
+        "url": "https://us5.datadoghq.com/dashboard/kmk-jar-atc"
+      }
+    ],
+    "previous_error": "tool not available: MCP write is not enabled for org",
+    "validation": "fifteen_resources_created_and_read_back"
+  },
+  "pipeline": {
+    "desired_name": "Insurance Business Observability",
+    "id": "XTUDCxKWQ9mYE_IztTNyAw",
+    "status": "created",
+    "url": "https://us5.datadoghq.com/logs/pipelines"
+  },
+  "dashboards": [
+    {
+      "title": "Insurance Application Health",
+      "definition": "dashboards/application-health.json",
+      "id": "iua-v7j-i8a",
+      "url": "https://us5.datadoghq.com/dashboard/iua-v7j-i8a",
+      "status": "created_and_read_back",
+      "revision_id": "eyJ2IjoxLCJtb2RpZmllZF9hdCI6IjIwMjYtMTEtMDJUMjM6NTA6MTcuMDY1MTI0KzAwOjAwIn0",
+      "widget_count": 14
+    },
+    {
+      "title": "Insurance Business Overview",
+      "definition": "dashboards/business-overview.json",
+      "id": "63s-vgf-ghp",
+      "url": "https://us5.datadoghq.com/dashboard/63s-vgf-ghp",
+      "status": "created_and_read_back",
+      "revision_id": "eyJ2IjoxLCJtb2RpZmllZF9hdCI6IjIwMjYtMTEtMDJUMjM6NTA6MTkuMzIyNjcyKzAwOjAwIn0",
+      "widget_count": 9
+    },
+    {
+      "title": "Insurance Journey Health",
+      "definition": "dashboards/journey-health.json",
+      "id": "r6i-rea-k8h",
+      "url": "https://us5.datadoghq.com/dashboard/r6i-rea-k8h",
+      "status": "created_and_read_back",
+      "revision_id": "eyJ2IjoxLCJtb2RpZmllZF9hdCI6IjIwMjYtMTEtMDJUMjM6NTA6MjEuNzMxMzMwKzAwOjAwIn0",
+      "widget_count": 12
+    },
+    {
+      "title": "Insurance Single Pane of Glass",
+      "definition": "dashboards/single-pane-of-glass.json",
+      "id": "kmk-jar-atc",
+      "url": "https://us5.datadoghq.com/dashboard/kmk-jar-atc",
+      "revision_id": "eyJ2IjoxLCJtb2RpZmllZF9hdCI6IjIwMjYtMTEtMDNUMDE6MjU6MDUuMTQxOTU0KzAwOjAwIn0",
+      "status": "created_and_read_back",
+      "widget_count": 24,
+      "role": "primary_single_pane_of_glass"
+    }
+  ],
+  "monitors": [
+    {
+      "name": "Insurance | local | Falha técnica no consumo/Inbox",
+      "definition": "monitors/cadastro-technical-failure.json",
+      "id": 23495763,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495763"
+    },
+    {
+      "name": "Insurance | local | Latência HTTP média elevada",
+      "definition": "monitors/http-mean-latency.json",
+      "id": 23495764,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495764"
+    },
+    {
+      "name": "Insurance | local | HTTP 5xx recorrente",
+      "definition": "monitors/http-server-errors.json",
+      "id": 23495765,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495765"
+    },
+    {
+      "name": "Insurance | local | Duplicações Inbox elevadas",
+      "definition": "monitors/inbox-duplicates.json",
+      "id": 23495766,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495766"
+    },
+    {
+      "name": "Insurance | local | Ausência de heartbeat JVM",
+      "definition": "monitors/jvm-heartbeat.json",
+      "id": 23495767,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495767"
+    },
+    {
+      "name": "Insurance | local | Outbox pendente envelhecida",
+      "definition": "monitors/outbox-oldest-pending.json",
+      "id": 23495768,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495768"
+    },
+    {
+      "name": "Insurance | local | Falhas recorrentes de publicação",
+      "definition": "monitors/outbox-publication-failures.json",
+      "id": 23495769,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495769"
+    },
+    {
+      "name": "Insurance | local | Volume de retries Outbox",
+      "definition": "monitors/outbox-retry-burst.json",
+      "id": 23495770,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495770"
+    },
+    {
+      "name": "Insurance | local | Snapshot Outbox indisponível",
+      "definition": "monitors/outbox-snapshot-unavailable.json",
+      "id": 23495773,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495773"
+    },
+    {
+      "name": "Insurance | local | Falha técnica na criação de proposta",
+      "definition": "monitors/proposal-technical-failure.json",
+      "id": 23495774,
+      "status": "draft_read_back",
+      "desired_state": "draft",
+      "url": "https://us5.datadoghq.com/monitors/23495774"
+    }
+  ],
+  "validation": {
+    "dashboard_queries_accepted": 29,
+    "dashboard_queries_with_points": 27,
+    "monitor_definitions_accepted": 10,
+    "dashboard_widget_rendering": "not_visually_checked",
+    "persisted_monitor_evaluation": "not_executed_drafts",
+    "incident_automation": "not_enabled",
+    "retention_changes": false,
+    "external_notifications": false,
+    "dashboard_widget_schemas_accepted": 59,
+    "monitor_native_definitions_accepted": 10,
+    "dashboard_read_back": true,
+    "pipeline_read_back": true,
+    "managed_java_pipeline_preserved": true,
+    "monitor_options_read_back": 10,
+    "reserved_trace_logs": 6,
+    "facets": "manual_pending",
+    "spg": {
+      "widgets": 24,
+      "schemas_accepted": 24,
+      "queries_accepted": 29,
+      "queries_with_points": 23,
+      "read_back": true,
+      "server_normalization": "response_format and scalar default aggregator added; declared query/formula fields unchanged",
+      "jdbc_occupancy_observed_percent": 0,
+      "visual_browser_inspection": "not_executed",
+      "new_metrics": false,
+      "new_monitors": false,
+      "paid_settings_changed": false
+    }
+  },
+  "synthetic_evidence": {
+    "started_at": "2026-11-03T00:59:07.7265874Z",
+    "completed_at": "2026-11-03T00:59:12.5963312Z",
+    "business_id": "0e8fead9-9d85-4d81-99ad-af449896438a",
+    "journey_id": "68173a28-075d-46fb-a126-e21c8e0dc9ff",
+    "event_id": "6a9627df-2aed-4cc3-9129-165ea628fa65",
+    "trace_id": "0a24ddaa05744def9613674deb230e85",
+    "traceparent": "00-0a24ddaa05744def9613674deb230e85-a2a924a6ca0cdf08-01",
+    "logs_url": "https://us5.datadoghq.com/logs?query=env%3Alocal%20%40business_id%3A0e8fead9-9d85-4d81-99ad-af449896438a",
+    "apm_url": "https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20%40businessId%3A0e8fead9-9d85-4d81-99ad-af449896438a",
+    "outbox_published": 1,
+    "inbox_effects": 1,
+    "replay_http_status": 202,
+    "duplicate_recognized": true,
+    "schema_id": 1,
+    "schema_version": 1,
+    "partition": 0,
+    "original_offset": 5,
+    "duplicate_offset": 6
+  },
+  "last_provisioned_at": "2026-11-02T23:50:29Z",
+  "last_validated_at": "2026-11-03T00:59:12.5963312Z",
+  "primary_dashboard_id": "kmk-jar-atc",
+  "primary_dashboard_url": "https://us5.datadoghq.com/dashboard/kmk-jar-atc",
+  "four_golden_signals": {
+    "traffic": "HTTP POST requests/sec and register/inbox execution rates; includes technical retries/replays",
+    "latency": "HTTP success/failure means and register/outbox/inbox mean durations in milliseconds; percentiles not enabled",
+    "errors": "HTTP 5xx fraction and technical failures by service/step/normalized error_code; missing series remains No Data",
+    "saturation": "JDBC active/max percentage, pending connections, process CPU percentage and heap used/committed bytes"
+  }
+}

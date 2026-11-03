@@ -190,3 +190,17 @@ Propostas e cadastro exigem 100% de mutation score em mvn -Pmutation verify e no
 A [revisão dos achados](docs/sonar-findings-review.md) descreve os testes que detectam cada mutante.
 
 [Cobertura de 100% por serviço: política, testes e evidências](docs/full-coverage-validation.md).
+
+[Contrato de métricas e correlação](docs/observability/business-telemetry-contract.md) e
+[operação Datadog da jornada](docs/observability/datadog-integration.md).
+
+## Operação Datadog — Etapa 10
+
+Logs, traces e as cinco métricas canônicas foram encontrados no SaaS US5 com uma proposta
+sintética, replay e reentrega deduplicada. Após liberação de MCP Write Access, uma pipeline e três dashboards foram criados; os dez
+monitores estão criados como Draft/P5 e precisam de publicação manual. IDs/URLs no relatório.
+[Evidências e pendências](docs/observability/stage10-validation.md) ·
+[Configurações operacionais](infrastructure/datadog/resources/README.md).
+
+Dashboard principal: [Insurance Single Pane of Glass](https://us5.datadoghq.com/dashboard/kmk-jar-atc), com os quatro sinais de ouro
+(tráfego, latência, erros e saturação), jornada e links de investigação. [Guia](docs/observability/single-pane-of-glass.md).

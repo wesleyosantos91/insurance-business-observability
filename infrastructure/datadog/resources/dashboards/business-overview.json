@@ -1,0 +1,216 @@
+{
+  "title": "Insurance Business Overview",
+  "description": "PoC insurance-business-observability | env:local | ms-propostas -> Outbox -> Kafka -> ms-cadastro. Queries use received series; metrics are best effort, not a financial ledger. Owner scope: this PoC only. https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29 https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29",
+  "layout_type": "ordered",
+  "reflow_type": "fixed",
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": [
+        "local"
+      ],
+      "defaults": [
+        "local"
+      ]
+    },
+    {
+      "name": "service",
+      "prefix": "service",
+      "available_values": [
+        "ms-propostas",
+        "ms-cadastro"
+      ],
+      "defaults": [
+        "*"
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Insurance Business Observability — operação de propostas**\n\nCriações e processamentos são marcos distintos da mesma proposta. Não some as etapas como propostas adicionais. Métricas não substituem os bancos operacionais.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 3,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Propostas novas registradas",
+        "requests": [
+          {
+            "q": "sum:insurance.business.transitions{project:insurance-business-observability,$env,$service,step:proposal_register}.as_count()",
+            "aggregator": "sum"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "width": 4,
+        "height": 3,
+        "x": 0,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Propostas novas processadas no cadastro",
+        "requests": [
+          {
+            "q": "sum:insurance.business.transitions{project:insurance-business-observability,$env,$service,step:proposal_receive}.as_count()",
+            "aggregator": "sum"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "width": 4,
+        "height": 3,
+        "x": 4,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Sucesso técnico de criação (%) — sem replays/conflitos",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "success",
+                "query": "sum:insurance.proposal.registrations{project:insurance-business-observability,$env,$service,outcome:created}.as_count()",
+                "aggregator": "sum"
+              },
+              {
+                "data_source": "metrics",
+                "name": "attempted",
+                "query": "sum:insurance.proposal.registrations{project:insurance-business-observability,$env,$service,!outcome:replayed,!outcome:rejected}.as_count()",
+                "aggregator": "sum"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "100 * success / attempted"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 2,
+        "custom_unit": "percent"
+      },
+      "layout": {
+        "width": 4,
+        "height": 3,
+        "x": 8,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Transições bem-sucedidas por etapa",
+        "requests": [
+          {
+            "q": "sum:insurance.business.transitions{project:insurance-business-observability,$env,$service,outcome:success} by {step}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 6
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Duração média por etapa (ms)",
+        "requests": [
+          {
+            "q": "avg:insurance.business.step.duration{project:insurance-business-observability,$env,$service} by {step,outcome}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 6
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Falhas técnicas por etapa — sem série até a primeira falha",
+        "requests": [
+          {
+            "q": "count:insurance.business.step.duration{project:insurance-business-observability,$env,$service,outcome:technical_failure} by {step,error_code}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Criações e replays da API",
+        "requests": [
+          {
+            "q": "sum:insurance.proposal.registrations{project:insurance-business-observability,$env,$service} by {outcome}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 9
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Rejeição de risco/aprovação:** jornada ainda não implementada; nenhum KPI fictício. Conflito de idempotência é rejeição HTTP, não rejeição de negócio.\n\n**Produto:** product_key existe em logs e productKey em spans. Não há tag de produto nas métricas; use Logs Explorer e facet opcional.\n\n[Logs Explorer](https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29) | [APM](https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29)\n\nFiltre por business_id nos logs e businessId nos spans. IDs não são tags de métricas.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 3,
+        "x": 0,
+        "y": 12
+      }
+    }
+  ]
+}

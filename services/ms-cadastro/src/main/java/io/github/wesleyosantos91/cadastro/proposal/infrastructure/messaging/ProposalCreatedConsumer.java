@@ -37,6 +37,9 @@ public class ProposalCreatedConsumer {
             stage = "acknowledgment";
             acknowledgment.acknowledge();
             LOG.atInfo()
+                    .addKeyValue("businessId", proposal.proposalId())
+                    .addKeyValue("product_key", proposal.productKey()).addKeyValue("journey_type", "PROPOSAL").addKeyValue("step", "proposal_receive")
+                    .addKeyValue("outcome", created ? "success" : "duplicate").addKeyValue("error_code", "none")
                     .addKeyValue("eventType", proposal.eventType())
                     .addKeyValue("eventId", proposal.eventId())
                     .addKeyValue("proposalId", proposal.proposalId())
@@ -48,7 +51,7 @@ public class ProposalCreatedConsumer {
                     .addKeyValue("offset", record.offset()).log("ProposalCreated processed and acknowledged");
         } catch (RuntimeException failure) {
             observation.error(failure);
-            telemetry.failure(stage);
+            telemetry.failure(observation, stage);
             throw failure;
         } finally {
             observation.stop();

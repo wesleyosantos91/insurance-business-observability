@@ -73,7 +73,15 @@ public class ProposalOutboxDispatcher {
                 var updated = store.retry(claim, Duration.ofMillis(delay), failureType(failure));
                 telemetry.relayOutcome(observation, updated ? "retry" : "claim_lost");
                 LOG.atWarn()
+                        .addKeyValue("businessId", claim.proposal().proposalId())
+                    .addKeyValue("product_key", claim.proposal().productKey()).addKeyValue("journey_type", "PROPOSAL")
+                        .addKeyValue("proposalId", claim.proposal().proposalId())
+                        .addKeyValue("journeyId", claim.proposal().journeyId())
+                        .addKeyValue("rootJourneyId", claim.proposal().journeyId())
+                        .addKeyValue("correlationId", claim.proposal().correlationId())
+                        .addKeyValue("step", "outbox_publish")
                         .addKeyValue("eventId", claim.proposal().eventId())
+                        .addKeyValue("outcome", "retry").addKeyValue("error_code", "publication_unconfirmed")
                         .addKeyValue("attempt", claim.attempts())
                         .addKeyValue("retryDelayMillis", delay)
                         .addKeyValue("claimUpdated", updated)
@@ -94,7 +102,15 @@ public class ProposalOutboxDispatcher {
             if (!store.published(claim)) {
                 telemetry.relayOutcome(observation, "claim_lost");
                 LOG.atWarn()
+                        .addKeyValue("businessId", claim.proposal().proposalId())
+                    .addKeyValue("product_key", claim.proposal().productKey()).addKeyValue("journey_type", "PROPOSAL")
+                        .addKeyValue("proposalId", claim.proposal().proposalId())
+                        .addKeyValue("journeyId", claim.proposal().journeyId())
+                        .addKeyValue("rootJourneyId", claim.proposal().journeyId())
+                        .addKeyValue("correlationId", claim.proposal().correlationId())
+                        .addKeyValue("step", "outbox_publish")
                         .addKeyValue("eventId", claim.proposal().eventId())
+                        .addKeyValue("outcome", "claim_lost").addKeyValue("error_code", "lease_lost")
                         .log("Outbox claim expired or superseded after Kafka confirmation; redelivery possible");
             } else {
                 telemetry.relayOutcome(observation, "published");
@@ -109,8 +125,16 @@ public class ProposalOutboxDispatcher {
 
     private static void logRecovery(Claim claim, RuntimeException failure) {
         LOG.atError()
+                .addKeyValue("businessId", claim.proposal().proposalId())
+                    .addKeyValue("product_key", claim.proposal().productKey()).addKeyValue("journey_type", "PROPOSAL")
+                .addKeyValue("proposalId", claim.proposal().proposalId())
+                .addKeyValue("journeyId", claim.proposal().journeyId())
+                .addKeyValue("rootJourneyId", claim.proposal().journeyId())
+                .addKeyValue("correlationId", claim.proposal().correlationId())
+                .addKeyValue("step", "outbox_publish")
                 .addKeyValue("eventId", claim.proposal().eventId()).addKeyValue("attempt", claim.attempts())
                 .addKeyValue("failureType", failure.getClass().getSimpleName())
+                .addKeyValue("outcome", "technical_failure").addKeyValue("error_code", "persistence_failure")
                 .log("Outbox state update failed; lease expiry will recover the same event");
     }
 

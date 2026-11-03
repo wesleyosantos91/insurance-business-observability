@@ -79,4 +79,31 @@ class ProposalConsumerTelemetryTests {
                         "AUTO", "PROPOSAL", "journey", "root", "correlation", null, null),
                         new ProposalCreatedPayload("proposal")));
     }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void committedAndDuplicateLogsCarryBusinessContextAndPreciseOutcome(boolean created) {
+        when(useCase.process(any())).thenReturn(created);
+        var logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ProposalCreatedConsumer.class);
+        var appender = new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+        appender.setContext(logger.getLoggerContext());
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            consumer.receive(record(), ack);
+            var fields = appender.list.getLast().getKeyValuePairs().stream().collect(
+                    java.util.stream.Collectors.toMap(pair -> pair.key, pair -> pair.value));
+            assertEquals(created ? "success" : "duplicate", fields.get("outcome"));
+            assertEquals("proposal", fields.get("businessId"));
+            assertEquals("none", fields.get("error_code"));
+            assertEquals("AUTO", fields.get("product_key"));
+            assertEquals("PROPOSAL", fields.get("journey_type"));
+            assertNotNull(fields.get("journeyId"));
+            assertNotNull(fields.get("correlationId"));
+            assertNotNull(fields.get("eventId"));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+    }
+
 }

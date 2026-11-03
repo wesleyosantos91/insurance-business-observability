@@ -1,0 +1,251 @@
+{
+  "title": "Insurance Journey Health",
+  "description": "PoC insurance-business-observability | env:local | ms-propostas -> Outbox -> Kafka -> ms-cadastro. Queries use received series; metrics are best effort, not a financial ledger. Owner scope: this PoC only. https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29 https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29",
+  "layout_type": "ordered",
+  "reflow_type": "fixed",
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": [
+        "local"
+      ],
+      "defaults": [
+        "local"
+      ]
+    },
+    {
+      "name": "service",
+      "prefix": "service",
+      "available_values": [
+        "ms-propostas",
+        "ms-cadastro"
+      ],
+      "defaults": [
+        "*"
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Insurance Business Observability — saúde da jornada**\n\nAt-least-once: retries e duplicatas são tentativas técnicas. Backlog é gauge autoritativa de snapshot; em réplicas do mesmo banco agregue por máximo. Ausência de ponto não significa zero.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 3,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Throughput de transições por serviço e etapa",
+        "requests": [
+          {
+            "q": "sum:insurance.business.transitions{project:insurance-business-observability,$env,$service} by {service,step}.as_rate()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Duração média registro e Inbox (ms)",
+        "requests": [
+          {
+            "q": "avg:insurance.business.step.duration{project:insurance-business-observability,$env,$service} by {service,step,outcome}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Tentativas de publicação Outbox",
+        "requests": [
+          {
+            "q": "sum:insurance.outbox.publish.attempts{project:insurance-business-observability,$env,$service}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 6
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Duração média de publicação (ms)",
+        "requests": [
+          {
+            "q": "avg:insurance.outbox.publish.duration{project:insurance-business-observability,$env,$service} by {outcome}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 6
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Duplicatas reconhecidas no Inbox",
+        "requests": [
+          {
+            "q": "sum:insurance.inbox.duplicates{project:insurance-business-observability,$env,$service}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Resultados do Relay (retry aparece quando ocorre)",
+        "requests": [
+          {
+            "q": "sum:insurance.outbox.dispatches{project:insurance-business-observability,$env,$service} by {outcome}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 9
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Backlog Outbox atual — máximo entre réplicas",
+        "requests": [
+          {
+            "q": "max:insurance.outbox.pending{project:insurance-business-observability,$env,$service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Idade do mais antigo pendente (s)",
+        "requests": [
+          {
+            "q": "max:insurance.outbox.oldest.age{project:insurance-business-observability,$env,$service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 12
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Disponibilidade do snapshot de backlog (1=leitura válida)",
+        "requests": [
+          {
+            "q": "min:insurance.outbox.snapshot.available{project:insurance-business-observability,$env,$service}",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 0,
+        "y": 15
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Falhas técnicas por etapa — No Data sem ocorrências",
+        "requests": [
+          {
+            "q": "count:insurance.business.step.duration{project:insurance-business-observability,$env,$service,outcome:technical_failure} by {step,error_code}.as_count()",
+            "display_type": "line"
+          }
+        ],
+        "show_legend": true
+      },
+      "layout": {
+        "width": 6,
+        "height": 3,
+        "x": 6,
+        "y": 15
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "**p95/p99:** histogramas recebidos como distributions, mas is_percentiles_enabled=false na conta. Nenhuma consulta p95/p99 ativa foi criada. Habilitação exige avaliar custo e autorização. Duração por etapa não é latência completa da jornada.\n\n[Logs Explorer](https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29) | [APM](https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29)\n\nFiltre por business_id nos logs e businessId nos spans. IDs não são tags de métricas.",
+        "background_color": "white",
+        "font_size": "14",
+        "has_padding": true
+      },
+      "layout": {
+        "width": 12,
+        "height": 3,
+        "x": 0,
+        "y": 18
+      }
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "name": "Insurance Business Observability",
+  "description": "PoC insurance-business-observability, local only. JSON stdout is parsed natively; preserve business identifiers and map OpenTelemetry log correlation. No index or retention change.",
+  "filter_query": "project:insurance-business-observability env:local service:(ms-propostas OR ms-cadastro)",
+  "is_enabled": true,
+  "tags": [
+    "project:insurance-business-observability",
+    "env:local"
+  ],
+  "processors": [
+    {
+      "type": "date-remapper",
+      "name": "Application UTC timestamp",
+      "is_enabled": true,
+      "sources": [
+        "@timestamp"
+      ]
+    },
+    {
+      "type": "status-remapper",
+      "name": "Spring Boot severity",
+      "is_enabled": true,
+      "sources": [
+        "level"
+      ]
+    },
+    {
+      "type": "trace-id-remapper",
+      "name": "OpenTelemetry trace identity",
+      "is_enabled": true,
+      "sources": [
+        "trace_id"
+      ]
+    },
+    {
+      "type": "span-id-remapper",
+      "name": "OpenTelemetry span identity",
+      "is_enabled": true,
+      "sources": [
+        "span_id"
+      ]
+    },
+    {
+      "type": "exclude-attribute",
+      "name": "Remove sensitive attribute authorization",
+      "is_enabled": true,
+      "attribute_to_exclude": "authorization"
+    },
+    {
+      "type": "exclude-attribute",
+      "name": "Remove sensitive attribute password",
+      "is_enabled": true,
+      "attribute_to_exclude": "password"
+    },
+    {
+      "type": "exclude-attribute",
+      "name": "Remove sensitive attribute token",
+      "is_enabled": true,
+      "attribute_to_exclude": "token"
+    },
+    {
+      "type": "exclude-attribute",
+      "name": "Remove sensitive attribute api_key",
+      "is_enabled": true,
+      "attribute_to_exclude": "api_key"
+    },
+    {
+      "type": "exclude-attribute",
+      "name": "Remove sensitive attribute DD_API_KEY",
+      "is_enabled": true,
+      "attribute_to_exclude": "DD_API_KEY"
+    },
+    {
+      "type": "exclude-attribute",
+      "name": "Remove sensitive attribute cpf",
+      "is_enabled": true,
+      "attribute_to_exclude": "cpf"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "status": "manual_pending",
+  "filter": "project:insurance-business-observability env:local service:(ms-propostas OR ms-cadastro)",
+  "existing_reserved": [
+    "service",
+    "env"
+  ],
+  "proposed_string_attributes": [
+    "journey_type",
+    "step",
+    "outcome",
+    "error_code"
+  ],
+  "optional_string_attributes": [
+    "product_key"
+  ],
+  "individual_ids": "Search by @business_id, @journey_id and @event_id; do not create facets until needed. No metric tags."
+}

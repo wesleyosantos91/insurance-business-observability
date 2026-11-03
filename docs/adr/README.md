@@ -20,3 +20,9 @@ Novas decisões que substituam uma anterior devem referenciá-la, preservando o 
 
 Data de registro: 2026-11-02. Autor: Wesley Santos / manutenção do repositório.
 Escopo: desenvolvimento local; configurações single-node e credenciais de exemplo não definem produção.
+
+- [ADR-0012 — contrato canônico de telemetria](0012-business-telemetry-contract.md), aceito.
+
+- [ADR-0013 — operação Datadog e validação SaaS](0013-datadog-operational-resources.md).
+
+- [ADR-0014 — Single Pane of Glass e quatro sinais de ouro](0014-single-pane-of-glass.md).

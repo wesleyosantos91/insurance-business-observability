@@ -1,0 +1,25 @@
+{
+  "name": "Insurance | local | Ausência de heartbeat JVM",
+  "type": "query alert",
+  "query": "avg(last_5m):avg:process.uptime{project:insurance-business-observability,env:local,service:ms-*} by {env,service} < 0",
+  "message": "**PoC insurance-business-observability. Limiar PROVISÓRIO; não é SLO aprovado.**\n\nUptime válido nunca é negativo. O estado No Data após 10 min indica ausência de telemetria, não distingue falha de aplicação, Agent ou rede. Exportação local é a cada 10 s. Ausência antes da primeira série não é detectada.\n\nAgrupar causas por env + service + step + error_code normalizado. Investigar IDs individuais nos logs, nunca como grupos de alerta.\n\n[Logs Explorer](https://us5.datadoghq.com/logs?query=project%3Ainsurance-business-observability%20env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29) | [APM](https://us5.datadoghq.com/apm/traces?query=env%3Alocal%20service%3A%28ms-propostas%20OR%20ms-cadastro%29)\n\nFiltre por business_id nos logs e businessId nos spans. IDs não são tags de métricas.\n\nSem destinatários, abertura automática de incidente ou encerramento por ausência de dados. Revisar baseline e publicar manualmente após aprovação operacional.",
+  "tags": [
+    "project:insurance-business-observability",
+    "env:local",
+    "threshold_status:provisional"
+  ],
+  "priority": 5,
+  "draft_status": "draft",
+  "options": {
+    "thresholds": {
+      "critical": 0
+    },
+    "require_full_window": false,
+    "notify_no_data": true,
+    "include_tags": true,
+    "notify_audit": false,
+    "renotify_interval": 0,
+    "evaluation_delay": 30,
+    "no_data_timeframe": 10
+  }
+}

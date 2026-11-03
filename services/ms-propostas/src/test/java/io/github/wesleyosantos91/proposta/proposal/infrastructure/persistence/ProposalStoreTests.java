@@ -74,6 +74,7 @@ class ProposalStoreTests {
         verify(manager).rollback(status);
         verify(manager, never()).commit(any());
         verify(telemetry, never()).registered(any(), any(), anyBoolean());
+        verify(telemetry).registrationFailed(eq(Observation.NOOP), any(IdempotencyConflictException.class));
     }
 
     @Test
@@ -144,4 +145,32 @@ class ProposalStoreTests {
         assertEquals("j", published.response().journeyId());
         assertEquals("c", published.response().correlationId());
     }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void committedAndDuplicateLogsCarryBusinessContextAndPreciseOutcome(boolean created) {
+        when(jdbc.update(startsWith("INSERT INTO proposals"), any(), any(), any(), any(), any()))
+                .thenReturn(created ? 1 : 0);
+        var logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ProposalStore.class);
+        var appender = new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+        appender.setContext(logger.getLoggerContext());
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            store.register("key", "AUTO", now);
+            var fields = appender.list.getLast().getKeyValuePairs().stream().collect(
+                    java.util.stream.Collectors.toMap(pair -> pair.key, pair -> pair.value));
+            assertEquals(created ? "success" : "replay", fields.get("outcome"));
+            assertEquals("p", fields.get("businessId"));
+            assertEquals("none", fields.get("error_code"));
+            assertEquals("AUTO", fields.get("product_key"));
+            assertEquals("PROPOSAL", fields.get("journey_type"));
+            assertNotNull(fields.get("journeyId"));
+            assertNotNull(fields.get("correlationId"));
+            assertNotNull(fields.get("eventId"));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+    }
+
 }
